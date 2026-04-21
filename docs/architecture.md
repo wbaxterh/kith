@@ -114,6 +114,7 @@ Declared in `packages/core/src/events.ts`. The event union is the **public contr
 | `turn_start`           | RuntimeAdapter               | UI, observability                  |
 | `turn_end`             | RuntimeAdapter               | UI, memory-save trigger            |
 | `tts_start`            | RuntimeAdapter               | UI animation cue                   |
+| `tts_audio_chunk`      | RuntimeAdapter               | browser audio playback             |
 | `tts_end`              | RuntimeAdapter               | barge-in coordination              |
 | `stt_partial`          | RuntimeAdapter               | UI live transcription              |
 | `stt_final`            | RuntimeAdapter               | agent text-in                      |

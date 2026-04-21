@@ -16,6 +16,7 @@ from typing import Any
 from pydantic import TypeAdapter, ValidationError
 from websockets.asyncio.server import ServerConnection, serve
 
+from .elevenlabs_pipeline import ElevenLabsPipeline
 from .envelope import (
     ErrorEvent,
     Op,
@@ -25,6 +26,11 @@ from .envelope import (
 )
 from .pipeline import MockPipeline, Pipeline
 
+_PIPELINES: dict[str, type[Pipeline]] = {
+    "mock": MockPipeline,
+    "elevenlabs": ElevenLabsPipeline,
+}
+
 OpAdapter: TypeAdapter[Op] = TypeAdapter(Op)
 
 
@@ -33,8 +39,8 @@ def _now_ms() -> int:
 
 
 class RuntimeServer:
-    def __init__(self, pipeline_factory: type[Pipeline] = MockPipeline) -> None:
-        self._pipeline_factory = pipeline_factory
+    def __init__(self, default_pipeline: str = "mock") -> None:
+        self._default_pipeline = default_pipeline
         self._pipeline: Pipeline | None = None
         self._ws: ServerConnection | None = None
         self._shutdown = asyncio.Event()
@@ -50,7 +56,6 @@ class RuntimeServer:
             await ws.close(code=1008, reason="sidecar already bound to a client")
             return
         self._ws = ws
-        self._pipeline = self._pipeline_factory(self._emit)
 
         try:
             async for raw in ws:
@@ -72,14 +77,38 @@ class RuntimeServer:
             )
             return
 
+        if op.op == "hello":
+            kind = op.config.get("pipeline", self._default_pipeline)
+            if kind not in _PIPELINES:
+                await self._emit(
+                    ErrorEvent(
+                        timestamp=_now_ms(),
+                        message=f"unknown pipeline: {kind}",
+                        retriable=False,
+                    ),
+                )
+                return
+            self._pipeline = _PIPELINES[kind](self._emit)
+            try:
+                await self._pipeline.start(op.config)
+            except Exception as exc:  # noqa: BLE001
+                self._pipeline = None
+                await self._emit(
+                    ErrorEvent(
+                        timestamp=_now_ms(),
+                        message=f"pipeline {kind} start failed: {exc}",
+                        retriable=False,
+                    ),
+                )
+                return
+            await self._emit(ReadyEvent(timestamp=_now_ms()))
+            return
+
         pipeline = self._pipeline
         if pipeline is None:
             return
 
         match op.op:
-            case "hello":
-                await pipeline.start(op.config)
-                await self._emit(ReadyEvent(timestamp=_now_ms()))
             case "sendText":
                 await pipeline.handle_text(op.text, op.turn_id)
             case "sendAudio":

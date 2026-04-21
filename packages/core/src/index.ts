@@ -17,6 +17,7 @@ export type {
   ReconnectEvent,
   SttFinalEvent,
   SttPartialEvent,
+  TtsAudioChunkEvent,
   TtsEndEvent,
   TtsStartEvent,
   TurnEndEvent,

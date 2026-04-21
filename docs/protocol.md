@@ -108,11 +108,13 @@ One-time, after `hello`. Tells the TS adapter the pipeline is warm and ops can f
 ### TTS lifecycle
 
 ```json
-{ "v": 0, "event": "tts_start", "timestamp": …, "turnId": "t-42", "chunkId": "c-0" }
-{ "v": 0, "event": "tts_end",   "timestamp": …, "turnId": "t-42", "chunkId": "c-0" }
+{ "v": 0, "event": "tts_start",       "timestamp": …, "turnId": "t-42", "chunkId": "c-0" }
+{ "v": 0, "event": "tts_audio_chunk", "timestamp": …, "turnId": "t-42", "chunkId": "c-0", "audioB64": "…", "mimeType": "audio/mpeg" }
+{ "v": 0, "event": "tts_audio_chunk", "timestamp": …, "turnId": "t-42", "chunkId": "c-0", "audioB64": "…", "mimeType": "audio/mpeg" }
+{ "v": 0, "event": "tts_end",         "timestamp": …, "turnId": "t-42", "chunkId": "c-0" }
 ```
 
-One `tts_start`/`tts_end` pair per synthesis chunk. Multiple pairs per turn when the pipeline chunks a long response at sentence boundaries.
+One `tts_start`/`tts_end` pair per synthesis chunk (a chunk is usually one sentence). Zero or more `tts_audio_chunk` events arrive between them carrying the audio payload — zero when the pipeline is mock/no-audio, many when a streaming provider returns bytes as they're rendered. Consumers concatenate `audioB64` bytes in arrival order to reconstruct the chunk's audio.
 
 ### STT
 

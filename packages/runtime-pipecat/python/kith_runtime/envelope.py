@@ -103,6 +103,14 @@ class TtsStartEvent(_Event):
     chunk_id: str
 
 
+class TtsAudioChunkEvent(_Event):
+    event: Literal["tts_audio_chunk"] = "tts_audio_chunk"
+    turn_id: str
+    chunk_id: str
+    audio_b64: str
+    mime_type: str
+
+
 class TtsEndEvent(_Event):
     event: Literal["tts_end"] = "tts_end"
     turn_id: str
@@ -156,6 +164,7 @@ WireEvent = Union[
     TurnStartEvent,
     TurnEndEvent,
     TtsStartEvent,
+    TtsAudioChunkEvent,
     TtsEndEvent,
     SttPartialEvent,
     SttFinalEvent,

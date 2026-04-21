@@ -44,6 +44,15 @@ export type WireEvent =
   | { v: 0; event: "turn_start"; timestamp: number; turnId: string; role: "user" | "assistant" }
   | { v: 0; event: "turn_end"; timestamp: number; turnId: string; role: "user" | "assistant" }
   | { v: 0; event: "tts_start"; timestamp: number; turnId: string; chunkId: string }
+  | {
+      v: 0;
+      event: "tts_audio_chunk";
+      timestamp: number;
+      turnId: string;
+      chunkId: string;
+      audioB64: string;
+      mimeType: string;
+    }
   | { v: 0; event: "tts_end"; timestamp: number; turnId: string; chunkId: string }
   | { v: 0; event: "stt_partial"; timestamp: number; turnId: string; text: string }
   | { v: 0; event: "stt_final"; timestamp: number; turnId: string; text: string }

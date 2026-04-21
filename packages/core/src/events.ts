@@ -14,6 +14,7 @@ export type KithEvent =
   | TurnStartEvent
   | TurnEndEvent
   | TtsStartEvent
+  | TtsAudioChunkEvent
   | TtsEndEvent
   | SttPartialEvent
   | SttFinalEvent
@@ -43,6 +44,21 @@ export interface TtsStartEvent extends EventBase {
   type: "tts_start";
   turnId: TurnId;
   chunkId: ChunkId;
+}
+
+/**
+ * One slice of synthesized audio for a given chunk. Multiple `tts_audio_chunk`
+ * events may arrive between a `tts_start` and its matching `tts_end` when the
+ * upstream TTS service streams audio. `audioB64` is the raw audio payload
+ * base64-encoded; `mimeType` tells the consumer how to decode (e.g.,
+ * `audio/mpeg`, `audio/wav`, `audio/l16`).
+ */
+export interface TtsAudioChunkEvent extends EventBase {
+  type: "tts_audio_chunk";
+  turnId: TurnId;
+  chunkId: ChunkId;
+  audioB64: string;
+  mimeType: string;
 }
 
 export interface TtsEndEvent extends EventBase {
