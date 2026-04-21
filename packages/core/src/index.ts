@@ -27,6 +27,13 @@ export type {
 } from "./events.ts";
 
 export type {
+  PersonaMode,
+  PronunciationDict,
+  TextTransform,
+  TextTransformContext,
+} from "./policy.ts";
+
+export type {
   ChunkId,
   RuntimeConfig,
   SessionId,
