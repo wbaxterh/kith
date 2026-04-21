@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Kith — web demo</title>
+    <style>
+      :root {
+        --bg: #0e0f13;
+        --fg: #e8e8f0;
+        --muted: #8a8a99;
+        --accent: #66d9a0;
+        --input-bg: #1a1b22;
+        --input-border: #2a2b34;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0; padding: 0; height: 100%;
+        background: var(--bg); color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        display: grid; grid-template-rows: auto 1fr auto;
+        max-width: 720px; margin: 0 auto; padding: 24px;
+      }
+      header { display: flex; align-items: baseline; gap: 12px; padding-bottom: 16px; }
+      header h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: 0.02em; }
+      header .status { font-size: 13px; color: var(--muted); }
+      main { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+      canvas { width: 280px; height: 280px; }
+      .state-label {
+        font-size: 13px; color: var(--muted); font-variant: all-small-caps;
+        letter-spacing: 0.1em; height: 16px;
+      }
+      .log {
+        width: 100%; max-height: 200px; overflow-y: auto;
+        font-family: ui-monospace, monospace; font-size: 11px; color: var(--muted);
+        background: var(--input-bg); border: 1px solid var(--input-border);
+        padding: 8px 12px; border-radius: 6px;
+      }
+      .log .evt { margin: 2px 0; }
+      .log .evt .t { color: var(--accent); }
+      footer { display: flex; gap: 8px; padding-top: 16px; }
+      textarea {
+        flex: 1; resize: none; min-height: 60px;
+        background: var(--input-bg); color: var(--fg);
+        border: 1px solid var(--input-border); border-radius: 6px;
+        padding: 10px 12px; font-size: 14px; font-family: inherit;
+      }
+      textarea:focus { outline: none; border-color: var(--accent); }
+      button {
+        background: var(--accent); color: #0e0f13; border: none;
+        padding: 0 20px; border-radius: 6px; font-weight: 600; cursor: pointer;
+        font-size: 14px;
+      }
+      button:disabled { background: var(--input-border); color: var(--muted); cursor: not-allowed; }
+      button.secondary {
+        background: transparent; color: var(--muted); border: 1px solid var(--input-border);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Kith</h1>
+      <span class="status" id="status">connecting…</span>
+    </header>
+    <main>
+      <canvas id="avatar" width="560" height="560"></canvas>
+      <div class="state-label" id="stateLabel">idle</div>
+      <div class="log" id="log"></div>
+    </main>
+    <footer>
+      <textarea
+        id="input"
+        placeholder="Type something, then press cmd/ctrl+enter…"
+      ></textarea>
+      <button type="button" id="sendBtn" disabled>Speak</button>
+      <button type="button" id="bargeBtn" class="secondary" disabled>Stop</button>
+    </footer>
+
+    <script type="module">
+      // --- DOM ---------------------------------------------------------------
+      const statusEl = document.getElementById("status");
+      const stateLabel = document.getElementById("stateLabel");
+      const logEl = document.getElementById("log");
+      const inputEl = document.getElementById("input");
+      const sendBtn = document.getElementById("sendBtn");
+      const bargeBtn = document.getElementById("bargeBtn");
+      const canvas = document.getElementById("avatar");
+      const ctx = canvas.getContext("2d");
+
+      // --- State -------------------------------------------------------------
+      let ws = null;
+      let avatarState = "idle"; // idle | thinking | speaking
+      let amplitude = 0;        // 0..1, drives mouth scale
+
+      // --- WebSocket ---------------------------------------------------------
+      function connect() {
+        const url = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`;
+        ws = new WebSocket(url);
+        ws.onopen = () => {
+          statusEl.textContent = "connecting runtime…";
+        };
+        ws.onclose = () => {
+          statusEl.textContent = "disconnected";
+          sendBtn.disabled = true;
+          bargeBtn.disabled = true;
+        };
+        ws.onerror = () => {
+          statusEl.textContent = "error";
+        };
+        ws.onmessage = (e) => handleServerEvent(JSON.parse(e.data));
+      }
+
+      function handleServerEvent(event) {
+        if (event.type === "_ready") {
+          statusEl.textContent = "ready";
+          sendBtn.disabled = false;
+          bargeBtn.disabled = false;
+          return;
+        }
+        logEvent(event);
+        switch (event.type) {
+          case "turn_start":
+            setState("thinking");
+            break;
+          case "tts_start":
+            setState("speaking");
+            break;
+          case "tts_audio_chunk":
+            enqueueAudio(event.audioB64);
+            break;
+          case "turn_end":
+            if (audioQueueEmpty()) setState("idle");
+            break;
+          case "barge_in_detected":
+            stopAudio();
+            setState("idle");
+            break;
+          case "error":
+            statusEl.textContent = `error: ${event.message}`;
+            break;
+        }
+      }
+
+      function logEvent(event) {
+        const line = document.createElement("div");
+        line.className = "evt";
+        line.innerHTML = `<span class="t">${event.type}</span> ${summary(event)}`;
+        logEl.appendChild(line);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+      function summary(e) {
+        if (e.turnId !== undefined) return `turn=${e.turnId}${e.chunkId ? ` chunk=${e.chunkId}` : ""}`;
+        if (e.message !== undefined) return e.message;
+        return "";
+      }
+
+      function setState(s) {
+        avatarState = s;
+        stateLabel.textContent = s;
+      }
+
+      // --- Audio playback with amplitude tap --------------------------------
+      let audioCtx = null;
+      let analyser = null;
+      let amplitudeBuf = null;
+      let nextStartTime = 0;
+      let playingSources = [];
+
+      function ensureAudio() {
+        if (audioCtx !== null) return audioCtx;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        amplitudeBuf = new Uint8Array(analyser.frequencyBinCount);
+        analyser.connect(audioCtx.destination);
+        nextStartTime = audioCtx.currentTime;
+        return audioCtx;
+      }
+
+      async function enqueueAudio(b64) {
+        const ac = ensureAudio();
+        const bytes = base64ToBytes(b64);
+        const buf = await ac.decodeAudioData(bytes.buffer.slice(0));
+        const src = ac.createBufferSource();
+        src.buffer = buf;
+        src.connect(analyser);
+        const startAt = Math.max(ac.currentTime + 0.02, nextStartTime);
+        src.start(startAt);
+        nextStartTime = startAt + buf.duration;
+        playingSources.push(src);
+        src.onended = () => {
+          playingSources = playingSources.filter((s) => s !== src);
+          if (playingSources.length === 0 && avatarState === "speaking") {
+            setState("idle");
+          }
+        };
+      }
+
+      function audioQueueEmpty() {
+        return playingSources.length === 0;
+      }
+
+      function stopAudio() {
+        for (const s of playingSources) {
+          try { s.stop(); } catch {}
+        }
+        playingSources = [];
+        if (audioCtx !== null) nextStartTime = audioCtx.currentTime;
+      }
+
+      function base64ToBytes(b64) {
+        const bin = atob(b64);
+        const out = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+        return out;
+      }
+
+      // --- Canvas render loop ------------------------------------------------
+      function render() {
+        if (analyser !== null) {
+          analyser.getByteFrequencyData(amplitudeBuf);
+          let sum = 0;
+          for (const v of amplitudeBuf) sum += v;
+          const avg = sum / amplitudeBuf.length / 255;
+          // Ease amplitude toward target to avoid jitter.
+          amplitude += (avg - amplitude) * 0.3;
+        } else {
+          amplitude += (0 - amplitude) * 0.1;
+        }
+
+        const { width: w, height: h } = canvas;
+        ctx.clearRect(0, 0, w, h);
+
+        const cx = w / 2;
+        const cy = h / 2;
+        const faceRadius = Math.min(w, h) * 0.38;
+
+        // Background glow
+        const grad = ctx.createRadialGradient(cx, cy, faceRadius * 0.6, cx, cy, faceRadius * 1.4);
+        grad.addColorStop(0, tintForState(avatarState, 0.25));
+        grad.addColorStop(1, "rgba(14,15,19,0)");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Face
+        ctx.beginPath();
+        ctx.arc(cx, cy, faceRadius, 0, Math.PI * 2);
+        ctx.fillStyle = tintForState(avatarState, 1);
+        ctx.fill();
+
+        // Eyes
+        const eyeOffset = faceRadius * 0.32;
+        const eyeRadius = faceRadius * 0.09;
+        for (const ex of [-eyeOffset, eyeOffset]) {
+          ctx.beginPath();
+          ctx.arc(cx + ex, cy - faceRadius * 0.15, eyeRadius, 0, Math.PI * 2);
+          ctx.fillStyle = "#0e0f13";
+          ctx.fill();
+        }
+
+        // Mouth — amplitude-driven scale
+        const baseMouthH = faceRadius * 0.08;
+        const mouthH = baseMouthH + amplitude * faceRadius * 0.55;
+        const mouthW = faceRadius * 0.5;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + faceRadius * 0.25, mouthW / 2, mouthH / 2, 0, 0, Math.PI * 2);
+        ctx.fillStyle = "#0e0f13";
+        ctx.fill();
+
+        requestAnimationFrame(render);
+      }
+
+      function tintForState(state, alpha) {
+        const colors = {
+          idle:     [102, 102, 110], // grey
+          thinking: [220, 180, 80],  // amber
+          speaking: [102, 217, 160], // green (matches --accent)
+          listening:[80, 160, 220],  // blue (reserved)
+        };
+        const c = colors[state] ?? colors.idle;
+        return `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+      }
+
+      // --- Input -------------------------------------------------------------
+      function sendSpeak() {
+        const text = inputEl.value.trim();
+        if (text === "" || ws === null || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({ type: "speak", text }));
+        inputEl.value = "";
+        ensureAudio();
+      }
+      function sendBargeIn() {
+        if (ws === null || ws.readyState !== WebSocket.OPEN) return;
+        ws.send(JSON.stringify({ type: "barge-in" }));
+      }
+      sendBtn.addEventListener("click", sendSpeak);
+      bargeBtn.addEventListener("click", sendBargeIn);
+      inputEl.addEventListener("keydown", (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          sendSpeak();
+        }
+      });
+
+      // --- Go ---------------------------------------------------------------
+      connect();
+      requestAnimationFrame(render);
+    </script>
+  </body>
+</html>
