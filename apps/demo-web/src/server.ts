@@ -78,14 +78,6 @@ const server = Bun.serve<{ sessionId: string }>({
         },
       });
 
-      const unsubscribe = runtime.on((event: KithEvent) => {
-        try {
-          ws.send(JSON.stringify(event));
-        } catch {
-          // ws closed; swallow
-        }
-      });
-
       try {
         await runtime.connect({ sessionId });
       } catch (err) {
@@ -94,7 +86,16 @@ const server = Bun.serve<{ sessionId: string }>({
         return;
       }
 
+      // voice.on() subscribes to BOTH runtime events AND router-synthesized
+      // events (emotion_state from parsed emojis). Forward everything.
       const voice = new VoiceRouter({ runtime });
+      const unsubscribe = voice.on((event: KithEvent) => {
+        try {
+          ws.send(JSON.stringify(event));
+        } catch {
+          // ws closed; swallow
+        }
+      });
       sessions.set(sessionId, { runtime, voice, unsubscribe });
 
       ws.send(JSON.stringify({ type: "_ready", sessionId }));
@@ -127,6 +128,7 @@ const server = Bun.serve<{ sessionId: string }>({
       if (session === undefined) return;
       sessions.delete(sessionId);
       session.unsubscribe();
+      session.voice.destroy();
       try {
         await session.runtime.disconnect();
       } catch (err) {

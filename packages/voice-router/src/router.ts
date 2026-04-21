@@ -1,12 +1,21 @@
 import type {
+  EventHandler,
+  KithEvent,
   PersonaMode,
   PronunciationDict,
   RuntimeAdapter,
   TextTransform,
   TextTransformContext,
+  Unsubscribe,
 } from "@kith/core";
 
 import { SentenceChunker } from "./chunker.ts";
+import {
+  analyzeEmojis,
+  DEFAULT_EMOJI_MAP,
+  dominantHint,
+  type EmotionHint,
+} from "./emoji-sentiment.ts";
 import { applyPronunciation } from "./pronunciation.ts";
 
 export interface VoiceRouterOptions {
@@ -20,16 +29,25 @@ export interface VoiceRouterOptions {
   dedupeWindowMs?: number;
   /** Optional override for sentence chunker settings. */
   maxBufferChars?: number;
+  /**
+   * Emoji → emotion map. When a message contains a known emoji, VoiceRouter
+   * emits an `emotion_state` event and passes the stripped text to TTS.
+   * Unknown emojis are still stripped (they'd otherwise be read aloud) but
+   * produce no event. Pass `null` to disable parsing entirely. Default:
+   * `DEFAULT_EMOJI_MAP`.
+   */
+  emojiMap?: Record<string, EmotionHint> | null;
 }
 
 /**
- * VoiceRouter — sentence-aware chunking, pronunciation overrides, and a
- * text-transform pipeline in front of a RuntimeAdapter.
+ * VoiceRouter — sentence-aware chunking, emoji→emotion translation,
+ * pronunciation overrides, and a text-transform pipeline in front of a
+ * RuntimeAdapter.
  *
- * Consumers call `.speak(text)` or `.streamText(iter)` instead of calling
- * `runtime.sendText` directly. The router splits at sentence boundaries and
- * sends one chunk per sentence — which is the single biggest lever for voice
- * naturalness per the project's Pattern A findings in the phase-1 plan.
+ * Subscribe via `.on(handler)` to receive BOTH runtime events (turns, TTS
+ * lifecycle, audio chunks) AND router-synthesized events (`emotion_state`
+ * parsed from emojis). Use the router's `on()` rather than the runtime's
+ * `on()` — the router is the complete consumer-facing event surface.
  */
 export class VoiceRouter {
   private readonly runtime: RuntimeAdapter;
@@ -38,6 +56,9 @@ export class VoiceRouter {
   private readonly transforms: TextTransform[];
   private personaMode: PersonaMode;
   private readonly dedupeWindowMs: number;
+  private readonly emojiMap: Record<string, EmotionHint> | null;
+  private readonly subscribers = new Set<EventHandler>();
+  private readonly runtimeUnsub: Unsubscribe;
   private lastSpokenAt = new Map<string, number>();
 
   constructor(options: VoiceRouterOptions) {
@@ -49,11 +70,31 @@ export class VoiceRouter {
     this.transforms = [...(options.transforms ?? [])];
     this.personaMode = options.personaMode ?? "neutral";
     this.dedupeWindowMs = options.dedupeWindowMs ?? 1000;
+    this.emojiMap = options.emojiMap === undefined ? DEFAULT_EMOJI_MAP : options.emojiMap;
+    this.runtimeUnsub = this.runtime.on((event) => this.dispatch(event));
   }
 
-  /** Speak a complete piece of text. Chunks at sentence boundaries. */
+  /** Dispose of the runtime subscription. Call when the router is no longer
+   * in use (e.g., on WebSocket close in a server context). */
+  destroy(): void {
+    this.runtimeUnsub();
+    this.subscribers.clear();
+  }
+
+  /** Subscribe to the router's event stream (runtime events + synthesized
+   * `emotion_state` events). */
+  on(handler: EventHandler): Unsubscribe {
+    this.subscribers.add(handler);
+    return () => {
+      this.subscribers.delete(handler);
+    };
+  }
+
+  /** Speak a complete piece of text. Emojis become emotion_state events;
+   * the stripped text is chunked at sentence boundaries and streamed. */
   async speak(text: string): Promise<void> {
-    const chunks = [...this.chunker.feed(text), ...this.chunker.flush()];
+    const cleaned = this.consumeEmojis(text);
+    const chunks = [...this.chunker.feed(cleaned), ...this.chunker.flush()];
     for (const chunk of chunks) {
       await this.sendChunk(chunk);
     }
@@ -65,7 +106,8 @@ export class VoiceRouter {
    */
   async streamText(iter: AsyncIterable<string>): Promise<void> {
     for await (const slice of iter) {
-      const ready = this.chunker.feed(slice);
+      const cleaned = this.consumeEmojis(slice);
+      const ready = this.chunker.feed(cleaned);
       for (const chunk of ready) {
         await this.sendChunk(chunk);
       }
@@ -96,6 +138,21 @@ export class VoiceRouter {
     return this.personaMode;
   }
 
+  private consumeEmojis(text: string): string {
+    if (this.emojiMap === null) return text;
+    const { strippedText, hints } = analyzeEmojis(text, this.emojiMap);
+    const dominant = dominantHint(hints);
+    if (dominant !== null) {
+      this.dispatch({
+        type: "emotion_state",
+        timestamp: Date.now(),
+        state: dominant.state,
+        intensity: dominant.intensity,
+      });
+    }
+    return strippedText;
+  }
+
   private async sendChunk(raw: string): Promise<void> {
     const ctx: TextTransformContext = { personaMode: this.personaMode };
     let text = applyPronunciation(raw, this.pronunciation);
@@ -114,6 +171,17 @@ export class VoiceRouter {
     }
 
     await this.runtime.sendText(trimmed);
+  }
+
+  private dispatch(event: KithEvent): void {
+    for (const h of this.subscribers) {
+      try {
+        const out = h(event);
+        if (out !== undefined) void out;
+      } catch (err) {
+        console.error("kith: voice-router handler threw", err);
+      }
+    }
   }
 
   private pruneDedupeMap(now: number): void {

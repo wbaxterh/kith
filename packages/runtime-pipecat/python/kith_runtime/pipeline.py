@@ -1,9 +1,13 @@
-"""Pipeline abstraction.
+"""Pipeline abstraction + mock pipeline.
 
 v0.1 Day 3: mock pipeline that simulates TTS on timers so we can prove
-the wire protocol end-to-end without Pipecat's install footprint. Day 4
-replaces `MockPipeline` with a real `PipecatPipeline` that builds a
-`pipecat.Pipeline` with STT → text-in → TTS services.
+the wire protocol end-to-end without hitting a real TTS provider.
+
+Queue semantics: each `handle_text` call enqueues an utterance. A worker
+task drains the queue sequentially, running `_synthesize` to completion
+for each entry. `barge_in` clears the queue AND cancels the current
+synthesis — this matches the RuntimeAdapter contract where only
+explicit barge-in interrupts.
 """
 
 from __future__ import annotations
@@ -42,39 +46,64 @@ class Pipeline(Protocol):
 class MockPipeline:
     """Simulates a TTS loop on asyncio timers.
 
-    On `handle_text`, emits turn_start → tts_start → (sleep N ms per sentence)
-    → tts_end → turn_end. `barge_in` cancels any in-flight synthesis task.
+    Enqueues `handle_text` calls and drains them sequentially. Each drains to
+    turn_start → tts_start → sleep(proportional) → tts_end → turn_end.
     """
 
     def __init__(self, emit: EventEmitter) -> None:
         self._emit = emit
-        self._synthesis_task: asyncio.Task[None] | None = None
+        self._queue: asyncio.Queue[tuple[str, str | None]] = asyncio.Queue()
+        self._worker: asyncio.Task[None] | None = None
+        self._current: asyncio.Task[None] | None = None
 
     async def start(self, config: dict) -> None:
-        return None
+        self._worker = asyncio.create_task(self._worker_loop())
 
     async def stop(self) -> None:
         await self.barge_in()
+        if self._worker is not None:
+            self._worker.cancel()
+            try:
+                await self._worker
+            except (asyncio.CancelledError, Exception):
+                pass
+            self._worker = None
 
     async def handle_text(self, text: str, turn_id: str | None) -> None:
-        tid = turn_id or f"t-{uuid4().hex[:8]}"
-        await self.barge_in()
-        self._synthesis_task = asyncio.create_task(self._synthesize(tid, text))
+        await self._queue.put((text, turn_id))
 
     async def handle_audio(self, audio_b64: str, sample_rate: int) -> None:
         # Mock pipeline ignores inbound audio. Real pipeline will route to STT.
         return None
 
     async def barge_in(self) -> None:
-        task = self._synthesis_task
-        if task is None or task.done():
-            return
-        task.cancel()
-        try:
-            await task
-        except (asyncio.CancelledError, Exception):
-            pass
-        self._synthesis_task = None
+        while not self._queue.empty():
+            try:
+                self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+        task = self._current
+        if task is not None and not task.done():
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self._current = None
+
+    async def _worker_loop(self) -> None:
+        while True:
+            text, turn_id = await self._queue.get()
+            tid = turn_id or f"t-{uuid4().hex[:8]}"
+            self._current = asyncio.create_task(self._synthesize(tid, text))
+            try:
+                await self._current
+            except asyncio.CancelledError:
+                # barge_in cancelled this one; loop to next item
+                pass
+            except Exception:
+                pass
+            self._current = None
 
     async def _synthesize(self, turn_id: str, text: str) -> None:
         try:

@@ -74,7 +74,9 @@ class ElevenLabsPipeline:
         self._model_id = self.DEFAULT_MODEL
         self._output_format = self.DEFAULT_OUTPUT_FORMAT
         self._voice_settings: dict | None = None
-        self._synthesis_task: asyncio.Task[None] | None = None
+        self._queue: asyncio.Queue[tuple[str, str | None]] = asyncio.Queue()
+        self._worker: asyncio.Task[None] | None = None
+        self._current: asyncio.Task[None] | None = None
 
     async def start(self, config: dict) -> None:
         api_key = config.get("apiKey") or os.environ.get("ELEVENLABS_API_KEY")
@@ -103,8 +105,17 @@ class ElevenLabsPipeline:
         }
         self._voice_settings = {k: v for k, v in renamed.items() if v is not None} or None
 
+        self._worker = asyncio.create_task(self._worker_loop())
+
     async def stop(self) -> None:
         await self.barge_in()
+        if self._worker is not None:
+            self._worker.cancel()
+            try:
+                await self._worker
+            except (asyncio.CancelledError, Exception):
+                pass
+            self._worker = None
 
     async def handle_text(self, text: str, turn_id: str | None) -> None:
         if self._client is None or self._voice_id is None:
@@ -112,24 +123,39 @@ class ElevenLabsPipeline:
                 ErrorEvent(timestamp=_now_ms(), message="pipeline not started", retriable=False),
             )
             return
-        tid = turn_id or f"t-{uuid4().hex[:8]}"
-        await self.barge_in()
-        self._synthesis_task = asyncio.create_task(self._synthesize(tid, text))
+        await self._queue.put((text, turn_id))
 
     async def handle_audio(self, audio_b64: str, sample_rate: int) -> None:
         # STT path is not wired in v0.1; inbound audio is dropped.
         return None
 
     async def barge_in(self) -> None:
-        task = self._synthesis_task
-        if task is None or task.done():
-            return
-        task.cancel()
-        try:
-            await task
-        except (asyncio.CancelledError, Exception):
-            pass
-        self._synthesis_task = None
+        while not self._queue.empty():
+            try:
+                self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                break
+        task = self._current
+        if task is not None and not task.done():
+            task.cancel()
+            try:
+                await task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self._current = None
+
+    async def _worker_loop(self) -> None:
+        while True:
+            text, turn_id = await self._queue.get()
+            tid = turn_id or f"t-{uuid4().hex[:8]}"
+            self._current = asyncio.create_task(self._synthesize(tid, text))
+            try:
+                await self._current
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                pass
+            self._current = None
 
     async def _synthesize(self, turn_id: str, text: str) -> None:
         try:

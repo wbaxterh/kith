@@ -63,6 +63,26 @@ describe("VoiceRouter", () => {
     expect(runtime.texts).toEqual(["Stop.", "Stop."]);
   });
 
+  it("emits emotion_state when emojis parse to a hint; strips from TTS text", async () => {
+    const runtime = new CaptureRuntime();
+    const router = new VoiceRouter({ runtime });
+    const events: unknown[] = [];
+    router.on((e) => {
+      events.push(e);
+    });
+
+    await router.speak("That's fire 🔥. Amazing work!");
+
+    const emotions = events.filter(
+      (e): e is { type: "emotion_state"; state: string } =>
+        (e as { type?: string }).type === "emotion_state",
+    );
+    expect(emotions.length).toBe(1);
+    expect(emotions[0]?.state).toBe("excited");
+    // Emoji removed from TTS payload; chunker trims surrounding whitespace.
+    expect(runtime.texts).toEqual(["That's fire .", "Amazing work!"]);
+  });
+
   it("streamText emits sentences as they complete", async () => {
     const runtime = new CaptureRuntime();
     const router = new VoiceRouter({ runtime });

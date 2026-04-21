@@ -92,6 +92,7 @@
       // --- State -------------------------------------------------------------
       let ws = null;
       let avatarState = "idle"; // idle | thinking | speaking
+      let emotion = { state: "neutral", intensity: 0 };
       let amplitude = 0;        // 0..1, drives mouth scale
 
       // --- WebSocket ---------------------------------------------------------
@@ -136,6 +137,10 @@
           case "barge_in_detected":
             stopAudio();
             setState("idle");
+            break;
+          case "emotion_state":
+            emotion = { state: event.state, intensity: event.intensity };
+            stateLabel.textContent = `${avatarState} · ${event.state}`;
             break;
           case "error":
             statusEl.textContent = `error: ${event.message}`;
@@ -273,13 +278,46 @@
       }
 
       function tintForState(state, alpha) {
-        const colors = {
-          idle:     [102, 102, 110], // grey
-          thinking: [220, 180, 80],  // amber
-          speaking: [102, 217, 160], // green (matches --accent)
-          listening:[80, 160, 220],  // blue (reserved)
+        const base = {
+          idle:     [102, 102, 110],
+          thinking: [220, 180, 80],
+          speaking: [102, 217, 160],
+          listening:[80, 160, 220],
         };
-        const c = colors[state] ?? colors.idle;
+        // Blend the state tint with an emotion tint based on intensity.
+        const emo = {
+          happy:        [245, 205, 95],
+          excited:      [240, 120, 110],
+          amused:       [250, 170, 100],
+          affectionate: [245, 130, 165],
+          sad:          [105, 145, 200],
+          alarmed:      [230, 100, 110],
+          worried:      [170, 140, 200],
+          frustrated:   [210, 110, 90],
+          angry:        [220, 80,  80],
+          thoughtful:   [160, 175, 200],
+          surprised:    [230, 210, 110],
+          calm:         [140, 195, 180],
+          wry:          [175, 165, 220],
+          approving:    [120, 210, 150],
+          disapproving: [180, 130, 140],
+          celebrating:  [250, 200, 120],
+          awkward:      [205, 180, 155],
+          neutral:      null,
+        };
+        const a = base[state] ?? base.idle;
+        const e = emo[emotion.state];
+        let c;
+        if (e !== null && e !== undefined && emotion.intensity > 0) {
+          const t = Math.min(1, emotion.intensity);
+          c = [
+            Math.round(a[0] * (1 - t) + e[0] * t),
+            Math.round(a[1] * (1 - t) + e[1] * t),
+            Math.round(a[2] * (1 - t) + e[2] * t),
+          ];
+        } else {
+          c = a;
+        }
         return `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
       }
 
