@@ -1,0 +1,27 @@
+{
+  "name": "kith",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Runtime-agnostic voice framework for AI companions.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbaxterh/kith.git"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "typecheck": "bun run --filter '*' typecheck"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.0",
+    "bun-types": "^1.3.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "bun": ">=1.3.0"
+  }
+}

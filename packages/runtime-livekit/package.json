@@ -1,0 +1,20 @@
+{
+  "name": "@kith/runtime-livekit",
+  "version": "0.0.0",
+  "description": "LiveKit runtime adapter for Kith (v0.1 portability stub).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@kith/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,28 @@
+# deps + build
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.python-version
+
+# env + secrets
+.env
+.env.*
+!.env.example
+
+# editor + OS
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# logs + tmp
+*.log
+.tmp/
+coverage/
