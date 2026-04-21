@@ -13,9 +13,8 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
     "types": ["bun-types"]
   },
   "exclude": ["**/dist", "**/node_modules", "**/python"]

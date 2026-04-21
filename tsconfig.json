@@ -1,12 +1,4 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": [],
-  "references": [
-    { "path": "./packages/core" },
-    { "path": "./packages/runtime-pipecat" },
-    { "path": "./packages/runtime-livekit" },
-    { "path": "./packages/voice-router" },
-    { "path": "./packages/avatar-events" },
-    { "path": "./packages/observability" }
-  ]
+  "include": ["packages/*/src/**/*"]
 }
