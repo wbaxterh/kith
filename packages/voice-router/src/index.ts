@@ -1,3 +1,8 @@
+export {
+  applyVoiceCharacter,
+  type VoiceCharacter,
+  voiceCharacterToRuntimeConfig,
+} from "./character.ts";
 export { SentenceChunker, type SentenceChunkerOptions } from "./chunker.ts";
 export {
   analyzeEmojis,
@@ -13,4 +18,5 @@ export {
   DEFAULT_BOARD_SPORTS_SLANG,
   DEFAULT_ENGLISH_SLANG,
   DEFAULT_GENZ_SLANG,
+  DEFAULT_LAUGH_TAGS,
 } from "./slang-defaults.ts";

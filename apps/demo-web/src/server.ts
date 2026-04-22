@@ -15,6 +15,7 @@ import {
   DEFAULT_BOARD_SPORTS_SLANG,
   DEFAULT_ENGLISH_SLANG,
   DEFAULT_GENZ_SLANG,
+  DEFAULT_LAUGH_TAGS,
   VoiceRouter,
 } from "@kith/voice-router";
 import type { ServerWebSocket } from "bun";
@@ -25,6 +26,7 @@ const DEMO_SLANG = {
   ...DEFAULT_ENGLISH_SLANG,
   ...DEFAULT_GENZ_SLANG,
   ...DEFAULT_BOARD_SPORTS_SLANG,
+  ...DEFAULT_LAUGH_TAGS,
   ...companionSlang,
 };
 
@@ -36,7 +38,7 @@ const PYTHON_CWD = path.resolve(ROOT, "../../../packages/runtime-pipecat/python"
 
 const apiKey = process.env.ELEVENLABS_API_KEY;
 const voiceId = process.env.ELEVENLABS_VOICE_ID;
-const modelId = process.env.ELEVENLABS_MODEL_ID ?? "eleven_multilingual_v2";
+const modelId = process.env.ELEVENLABS_MODEL_ID ?? "eleven_v3";
 
 if (apiKey === undefined || voiceId === undefined) {
   console.error("ELEVENLABS_API_KEY and ELEVENLABS_VOICE_ID must be set (see .env.example)");

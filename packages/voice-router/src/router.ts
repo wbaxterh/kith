@@ -10,6 +10,7 @@ import type {
   Unsubscribe,
 } from "@kith/core";
 
+import type { VoiceCharacter } from "./character.ts";
 import { SentenceChunker } from "./chunker.ts";
 import {
   analyzeEmojis,
@@ -21,6 +22,14 @@ import { applyPronunciation } from "./pronunciation.ts";
 
 export interface VoiceRouterOptions {
   runtime: RuntimeAdapter;
+  /**
+   * Convenience: apply a `VoiceCharacter` profile at construction. Explicit
+   * options on this object take precedence over character fields. Voice-side
+   * settings (voiceId, modelId, stability, …) on the character are ignored
+   * by the router — extract them with `voiceCharacterToRuntimeConfig` and
+   * pass them to your RuntimeAdapter's config.
+   */
+  character?: VoiceCharacter;
   /**
    * Abbreviation expansion map, applied before pronunciation. Use for slang,
    * jargon, and text-speak that the TTS needs spelled out ("omg" → "oh my
@@ -74,12 +83,20 @@ export class VoiceRouter {
     this.chunker = new SentenceChunker(
       options.maxBufferChars !== undefined ? { maxBufferChars: options.maxBufferChars } : {},
     );
-    this.slang = options.slang ?? {};
-    this.pronunciation = options.pronunciation ?? {};
+    const char = options.character;
+    this.slang = options.slang ?? char?.slang ?? {};
+    this.pronunciation = options.pronunciation ?? char?.pronunciation ?? {};
     this.transforms = [...(options.transforms ?? [])];
-    this.personaMode = options.personaMode ?? "neutral";
+    this.personaMode = options.personaMode ?? char?.personaMode ?? "neutral";
     this.dedupeWindowMs = options.dedupeWindowMs ?? 1000;
-    this.emojiMap = options.emojiMap === undefined ? DEFAULT_EMOJI_MAP : options.emojiMap;
+    // Explicit emojiMap wins; then character's; then default. `null` is valid
+    // at either level to disable emoji parsing entirely.
+    this.emojiMap =
+      options.emojiMap !== undefined
+        ? options.emojiMap
+        : char?.emojiMap !== undefined
+          ? char.emojiMap
+          : DEFAULT_EMOJI_MAP;
     this.runtimeUnsub = this.runtime.on((event) => this.dispatch(event));
   }
 

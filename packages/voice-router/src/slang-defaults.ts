@@ -72,8 +72,50 @@ export const DEFAULT_GENZ_SLANG: SlangDict = {
   tbf: "to be fair",
   tfw: "that feeling when",
   tldr: "too long didn't read",
+  // Profanity-adjacent — consumers who want clean output should build their
+  // slang dict without DEFAULT_GENZ_SLANG or override "af" to something else.
+  af: "as fuck",
   // "no cap" is a phrase — for now, `cap` passes through; consumers add
   // multi-word keys if they want "no cap" → "for real" specifically.
+};
+
+/**
+ * Laugh text → v3 audio tag. Turns "haha" / "lol" / "hehe" etc. into
+ * `[laughs]` / `[giggles]` tags that `eleven_v3` renders as real laughter.
+ *
+ * **Requires `ELEVENLABS_MODEL_ID=eleven_v3`.** Audio tags are ONLY honored
+ * by Eleven v3. On older models (`eleven_multilingual_v2`, `eleven_turbo_v2_5`,
+ * `eleven_flash_v2_5`) the TTS will speak the literal text "brackets laughs"
+ * — strictly worse than leaving the original "haha" intact. Don't spread
+ * this dict into your slang unless you're on v3.
+ *
+ * Variant handling is intentionally generous: "haha", "hahaha",
+ * "hahahaha" all map to the same tag. Consumers who want "short haha =
+ * chuckle, long haha = laugh" override specific keys.
+ */
+export const DEFAULT_LAUGH_TAGS: SlangDict = {
+  // belly laughs — the common "lol-family"
+  haha: "[laughs]",
+  hahaha: "[laughs]",
+  hahahaha: "[laughs]",
+  ahaha: "[laughs]",
+  ahahaha: "[laughs]",
+  bahaha: "[laughs]",
+  bahahaha: "[laughs]",
+  lol: "[laughs]",
+  lmao: "[laughs]",
+  lmfao: "[laughs]",
+  rofl: "[laughs]",
+
+  // lighter, higher-pitched laughter
+  hehe: "[giggles]",
+  hehehe: "[giggles]",
+  heheh: "[giggles]",
+  tehee: "[giggles]",
+
+  // sinister / character-y
+  mwahaha: "[laughs]",
+  mwahahaha: "[laughs]",
 };
 
 /**

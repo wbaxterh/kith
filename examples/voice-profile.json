@@ -1,0 +1,19 @@
+{
+  "voice": {
+    "modelId": "eleven_v3",
+    "stability": 0.45,
+    "similarityBoost": 0.85,
+    "style": 0.4,
+    "useSpeakerBoost": true
+  },
+  "slang": {
+    "idc": "I don't care"
+  },
+  "pronunciation": {
+    "uso": "oo-so",
+    "ganbare": "gahn-bah-ray",
+    "itadakimasu": "ee-ta-dah-kee-mahs",
+    "arigato": "ah-ree-gah-toh"
+  },
+  "personaMode": "hype"
+}
