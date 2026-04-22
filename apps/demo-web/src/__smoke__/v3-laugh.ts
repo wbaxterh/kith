@@ -38,9 +38,7 @@ async function main(): Promise<void> {
     }
   });
 
-  await new Promise<void>((r) =>
-    ws.addEventListener("open", () => r(), { once: true }),
-  );
+  await new Promise<void>((r) => ws.addEventListener("open", () => r(), { once: true }));
   await ready.promise;
 
   ws.send(
@@ -50,10 +48,7 @@ async function main(): Promise<void> {
     }),
   );
 
-  await Promise.race([
-    new Promise<void>((r) => setTimeout(r, 15000)),
-    done.promise,
-  ]);
+  await Promise.race([new Promise<void>((r) => setTimeout(r, 15000)), done.promise]);
   ws.close();
 
   if (chunks.length === 0) {

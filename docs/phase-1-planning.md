@@ -163,4 +163,5 @@ kith/
 
 ## 8. Decision log (updates go below, newest first)
 
+- **2026-04-22** — v0.1.0 shipped with a leaner scope than the original §4 schedule. Landed: core contracts, Pipecat runtime with auto-respawn, voice-router (chunking + slang + pronunciation + emoji→emotion + VoiceCharacter profiles), observability (traces + dup-send + reconnect), web demo, tutorial. Explicitly deferred to v0.2 (see CHANGELOG): `@kith/runtime-livekit` portability stub, Cartesia + OpenAI TTS provider router, `@kith/avatar-events` renderer utilities, real VRM + phoneme-to-viseme, mic input / STT. v0.1 premise — "the abstract voice layer works, one of each is wired, consumers know the shape to extend" — is met without those items. v0.2 scope items are honored from the original plan, just not blocking release.
 - **2026-04-20** — Plan locked. Name: Kith. Repo: `wbaxterh/kith`. Primary runtime: Pipecat. Reference consumer selected (private). All §3 decisions finalized.

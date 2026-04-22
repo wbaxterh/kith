@@ -14,6 +14,7 @@
 import type {
   EventHandler,
   KithEvent,
+  ObservabilityAdapter,
   RuntimeAdapter,
   RuntimeConfig,
   Unsubscribe,
@@ -26,6 +27,11 @@ export interface PipecatRuntimeOptions extends SidecarOptions {
   /** Opaque config forwarded to the sidecar in the `hello` op. Shape is defined
    * by the Python-side pipeline (e.g., TTS provider, voice IDs). */
   config?: Record<string, unknown>;
+  /** Attach an ObservabilityAdapter to record sidecar reconnects. */
+  observability?: ObservabilityAdapter;
+  /** Max automatic reconnect attempts after an unexpected sidecar exit.
+   * Default: 5. Set to 0 to disable auto-respawn. */
+  maxReconnectAttempts?: number;
 }
 
 export class PipecatRuntime implements RuntimeAdapter {
@@ -33,18 +39,40 @@ export class PipecatRuntime implements RuntimeAdapter {
   private readonly handlers = new Set<EventHandler>();
   private sidecar: SidecarHandle | null = null;
   private ws: WebSocket | null = null;
+  private sessionId: string | null = null;
+  private shuttingDown = false;
+  private reconnectAttempt = 0;
+  private readonly maxReconnectAttempts: number;
 
   constructor(options: PipecatRuntimeOptions = {}) {
     this.options = options;
+    this.maxReconnectAttempts = options.maxReconnectAttempts ?? 5;
   }
 
   async connect(config: RuntimeConfig): Promise<void> {
     if (this.sidecar !== null) {
       throw new Error("PipecatRuntime already connected");
     }
+    this.sessionId = config.sessionId;
+    this.shuttingDown = false;
+    this.reconnectAttempt = 0;
+    await this.openSession();
+  }
+
+  private async openSession(): Promise<void> {
+    if (this.sessionId === null) {
+      throw new Error("PipecatRuntime.openSession called without a sessionId");
+    }
 
     const sidecar = await spawnSidecar(this.options);
     this.sidecar = sidecar;
+
+    // Watch for unexpected exit → respawn path.
+    sidecar.exited.then((code) => {
+      if (this.shuttingDown) return;
+      if (this.sidecar !== sidecar) return; // replaced by a newer spawn
+      this.handleSidecarExit(code);
+    });
 
     const ws = new WebSocket(`ws://127.0.0.1:${sidecar.port}/`);
     this.ws = ws;
@@ -52,24 +80,94 @@ export class PipecatRuntime implements RuntimeAdapter {
     await waitForOpen(ws);
     ws.addEventListener("message", (e) => this.onMessage(e));
     ws.addEventListener("close", () => {
-      this.ws = null;
+      if (this.ws === ws) this.ws = null;
     });
 
     const ready = waitForReady(ws);
     this.send({
       v: 0,
       op: "hello",
-      sessionId: config.sessionId,
+      sessionId: this.sessionId,
       config: this.options.config ?? {},
     });
     await ready;
   }
 
+  private handleSidecarExit(code: number | null): void {
+    this.sidecar = null;
+    if (this.ws !== null) {
+      try {
+        this.ws.close();
+      } catch {
+        // ignore
+      }
+      this.ws = null;
+    }
+
+    if (this.maxReconnectAttempts <= 0) {
+      this.emitInternal({
+        type: "error",
+        timestamp: Date.now(),
+        message: `sidecar exited (code=${code}) and auto-respawn is disabled`,
+        retriable: false,
+      });
+      return;
+    }
+
+    if (this.reconnectAttempt >= this.maxReconnectAttempts) {
+      this.emitInternal({
+        type: "error",
+        timestamp: Date.now(),
+        message: `sidecar exited (code=${code}); giving up after ${this.reconnectAttempt} attempts`,
+        retriable: false,
+      });
+      return;
+    }
+
+    this.reconnectAttempt += 1;
+    const attempt = this.reconnectAttempt;
+    const delayMs = Math.min(8000, 250 * 2 ** (attempt - 1));
+
+    this.emitInternal({
+      type: "reconnect",
+      timestamp: Date.now(),
+      attempt,
+    });
+    this.options.observability?.recordReconnect(attempt);
+
+    setTimeout(() => {
+      void this.attemptReconnect();
+    }, delayMs);
+  }
+
+  private async attemptReconnect(): Promise<void> {
+    if (this.shuttingDown) return;
+    try {
+      await this.openSession();
+      // Successful reconnect — clear attempt counter so future crashes
+      // start fresh backoff.
+      this.reconnectAttempt = 0;
+    } catch (err) {
+      this.emitInternal({
+        type: "error",
+        timestamp: Date.now(),
+        message: `reconnect attempt ${this.reconnectAttempt} failed: ${err instanceof Error ? err.message : String(err)}`,
+        retriable: this.reconnectAttempt < this.maxReconnectAttempts,
+      });
+      if (this.reconnectAttempt < this.maxReconnectAttempts) {
+        // Retry with further backoff.
+        this.handleSidecarExit(null);
+      }
+    }
+  }
+
   async disconnect(): Promise<void> {
+    this.shuttingDown = true;
     const sidecar = this.sidecar;
     const ws = this.ws;
     this.sidecar = null;
     this.ws = null;
+    this.sessionId = null;
 
     if (ws !== null && ws.readyState === WebSocket.OPEN) {
       try {
@@ -145,9 +243,13 @@ export class PipecatRuntime implements RuntimeAdapter {
     const event = toKithEvent(wire);
     if (event === null) return; // `ready` — internal only
 
+    this.emitInternal(event as KithEvent);
+  }
+
+  private emitInternal(event: KithEvent): void {
     for (const handler of this.handlers) {
       try {
-        const out = handler(event as KithEvent);
+        const out = handler(event);
         if (out !== undefined) void out;
       } catch (err) {
         // Handler errors are swallowed per the `EventHandler` contract —

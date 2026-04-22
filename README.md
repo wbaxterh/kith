@@ -30,13 +30,13 @@ your agent  ←→  @kith/core  ←→  runtime adapter  ←→  Pipecat | LiveK
 
 ## Status
 
-**Pre-alpha. Phase 1 planning.** No code yet. The architecture, scope, and 2-week build plan live in [`docs/phase-1-planning.md`](docs/phase-1-planning.md).
+**v0.1 — shipping.** Core framework + reference demo work end-to-end with real ElevenLabs TTS. See [`CHANGELOG.md`](CHANGELOG.md) for what landed and [`docs/tutorial.md`](docs/tutorial.md) to build your first companion in under 15 minutes.
 
 ## Roadmap
 
-- **v0.1** (2 weeks) — `@kith/core` interfaces, Pipecat runtime, voice-router with sentence chunking, policy engine, web demo with procedural avatar, LiveKit adapter stub, docs.
-- **v0.2** — full VRM + phoneme-to-viseme lipsync, React Native support, observability beyond traces.
-- **v0.3+** — telephony (SIP/PSTN via LiveKit), multi-agent orchestration, pluggable memory backends.
+- **v0.1 (shipped)** — `@kith/core` contracts, `@kith/runtime-pipecat` with real ElevenLabs TTS + auto-respawn, `@kith/voice-router` with sentence-aware chunking + emoji→emotion + slang/pronunciation + VoiceCharacter profiles, `@kith/observability` (traces + dup-send + reconnect), reference web demo with procedural avatar.
+- **v0.2** — `@kith/runtime-livekit` portability stub, Cartesia + OpenAI TTS provider adapters with fallback, `@kith/avatar-events` utilities, VRM + phoneme-to-viseme lipsync, mic input / STT round-trip.
+- **v0.3+** — React Native support, telephony (SIP/PSTN via LiveKit), multi-agent orchestration, pluggable memory backends.
 
 ## Non-goals (at least through v0.1)
 
@@ -46,7 +46,7 @@ your agent  ←→  @kith/core  ←→  runtime adapter  ←→  Pipecat | LiveK
 
 ## Contributing
 
-Repo is public for visibility. Not accepting external PRs until v0.1 ships — the interfaces are still being shaped against a private reference consumer. Watch/star to follow along.
+v0.1 API surface is stable for consumers. If you hit a rough edge or a bug, file an issue — the surface is small enough to evolve carefully. External PRs for v0.2 deferred items (provider adapters, LiveKit runtime, VRM avatars) are welcome once v0.1 ships and the interfaces settle in real use.
 
 ## License
 
