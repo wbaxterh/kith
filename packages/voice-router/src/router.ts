@@ -4,6 +4,7 @@ import type {
   PersonaMode,
   PronunciationDict,
   RuntimeAdapter,
+  SlangDict,
   TextTransform,
   TextTransformContext,
   Unsubscribe,
@@ -20,6 +21,12 @@ import { applyPronunciation } from "./pronunciation.ts";
 
 export interface VoiceRouterOptions {
   runtime: RuntimeAdapter;
+  /**
+   * Abbreviation expansion map, applied before pronunciation. Use for slang,
+   * jargon, and text-speak that the TTS needs spelled out ("omg" → "oh my
+   * god", "fs" → "frontside"). Compose from the exported defaults via spread.
+   */
+  slang?: SlangDict;
   pronunciation?: PronunciationDict;
   /** Transforms applied in order to each sentence before `runtime.sendText`. */
   transforms?: TextTransform[];
@@ -52,6 +59,7 @@ export interface VoiceRouterOptions {
 export class VoiceRouter {
   private readonly runtime: RuntimeAdapter;
   private readonly chunker: SentenceChunker;
+  private slang: SlangDict;
   private pronunciation: PronunciationDict;
   private readonly transforms: TextTransform[];
   private personaMode: PersonaMode;
@@ -66,6 +74,7 @@ export class VoiceRouter {
     this.chunker = new SentenceChunker(
       options.maxBufferChars !== undefined ? { maxBufferChars: options.maxBufferChars } : {},
     );
+    this.slang = options.slang ?? {};
     this.pronunciation = options.pronunciation ?? {};
     this.transforms = [...(options.transforms ?? [])];
     this.personaMode = options.personaMode ?? "neutral";
@@ -117,6 +126,10 @@ export class VoiceRouter {
     }
   }
 
+  setSlang(dict: SlangDict): void {
+    this.slang = dict;
+  }
+
   setPronunciation(dict: PronunciationDict): void {
     this.pronunciation = dict;
   }
@@ -155,7 +168,10 @@ export class VoiceRouter {
 
   private async sendChunk(raw: string): Promise<void> {
     const ctx: TextTransformContext = { personaMode: this.personaMode };
-    let text = applyPronunciation(raw, this.pronunciation);
+    // Order: slang expands first (produces real words) → pronunciation
+    // corrects any remaining mispronunciations → transforms get the last say.
+    let text = applyPronunciation(raw, this.slang);
+    text = applyPronunciation(text, this.pronunciation);
     for (const fn of this.transforms) {
       text = fn(text, ctx);
     }

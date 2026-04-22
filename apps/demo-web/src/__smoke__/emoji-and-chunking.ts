@@ -32,7 +32,9 @@ async function main(): Promise<void> {
     if (msg.type === "emotion_state") {
       console.log(`[emotion_state] state=${msg.state} intensity=${msg.intensity}`);
     } else if (msg.type === "tts_audio_chunk") {
-      console.log(`[tts_audio_chunk] turn=${msg.turnId} chunk=${msg.chunkId} b64=${msg.audioB64.length}`);
+      console.log(
+        `[tts_audio_chunk] turn=${msg.turnId} chunk=${msg.chunkId} b64=${msg.audioB64.length}`,
+      );
     } else if (msg.type === "turn_end") {
       turnEnds++;
       console.log(`[turn_end] (${turnEnds}/${expectedTurns})`);
@@ -46,9 +48,7 @@ async function main(): Promise<void> {
   });
   ws.addEventListener("error", (e) => allDone.reject(e as unknown as Error));
 
-  await new Promise<void>((r) =>
-    ws.addEventListener("open", () => r(), { once: true }),
-  );
+  await new Promise<void>((r) => ws.addEventListener("open", () => r(), { once: true }));
   await ready.promise;
 
   ws.send(

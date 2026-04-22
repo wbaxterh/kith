@@ -11,8 +11,22 @@
 import path from "node:path";
 import type { KithEvent } from "@kith/core";
 import { PipecatRuntime } from "@kith/runtime-pipecat";
-import { VoiceRouter } from "@kith/voice-router";
+import {
+  DEFAULT_BOARD_SPORTS_SLANG,
+  DEFAULT_ENGLISH_SLANG,
+  DEFAULT_GENZ_SLANG,
+  VoiceRouter,
+} from "@kith/voice-router";
 import type { ServerWebSocket } from "bun";
+
+import companionSlang from "../../../examples/companion-slang-skate.json" with { type: "json" };
+
+const DEMO_SLANG = {
+  ...DEFAULT_ENGLISH_SLANG,
+  ...DEFAULT_GENZ_SLANG,
+  ...DEFAULT_BOARD_SPORTS_SLANG,
+  ...companionSlang,
+};
 
 const PORT = Number(process.env.PORT ?? 3030);
 const ROOT = path.dirname(Bun.fileURLToPath(import.meta.url));
@@ -88,7 +102,7 @@ const server = Bun.serve<{ sessionId: string }>({
 
       // voice.on() subscribes to BOTH runtime events AND router-synthesized
       // events (emotion_state from parsed emojis). Forward everything.
-      const voice = new VoiceRouter({ runtime });
+      const voice = new VoiceRouter({ runtime, slang: DEMO_SLANG });
       const unsubscribe = voice.on((event: KithEvent) => {
         try {
           ws.send(JSON.stringify(event));

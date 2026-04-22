@@ -29,6 +29,7 @@ export type {
 export type {
   PersonaMode,
   PronunciationDict,
+  SlangDict,
   TextTransform,
   TextTransformContext,
 } from "./policy.ts";

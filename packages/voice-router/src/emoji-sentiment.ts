@@ -13,10 +13,13 @@
  * to extend rather than replace.
  */
 
+export type EmotionPolarity = "positive" | "negative" | "neutral";
+
 export interface EmotionHint {
   state: string;
   /** 0..1 — how strongly this emoji asserts the state. */
   intensity: number;
+  polarity: EmotionPolarity;
 }
 
 /**
@@ -25,71 +28,75 @@ export interface EmotionHint {
  */
 export const DEFAULT_EMOJI_MAP: Record<string, EmotionHint> = {
   // happy / positive
-  "😊": { state: "happy", intensity: 0.6 },
-  "🙂": { state: "happy", intensity: 0.4 },
-  "😄": { state: "happy", intensity: 0.8 },
-  "😃": { state: "happy", intensity: 0.7 },
-  "😁": { state: "happy", intensity: 0.7 },
-  "😀": { state: "happy", intensity: 0.7 },
+  "😊": { state: "happy", intensity: 0.6, polarity: "positive" },
+  "🙂": { state: "happy", intensity: 0.4, polarity: "positive" },
+  "😄": { state: "happy", intensity: 0.8, polarity: "positive" },
+  "😃": { state: "happy", intensity: 0.7, polarity: "positive" },
+  "😁": { state: "happy", intensity: 0.7, polarity: "positive" },
+  "😀": { state: "happy", intensity: 0.7, polarity: "positive" },
 
   // excited / hype
-  "🎉": { state: "excited", intensity: 0.9 },
-  "🔥": { state: "excited", intensity: 0.8 },
-  "✨": { state: "excited", intensity: 0.5 },
-  "⚡": { state: "excited", intensity: 0.7 },
-  "🚀": { state: "excited", intensity: 0.8 },
-  "💯": { state: "excited", intensity: 0.8 },
+  "🎉": { state: "excited", intensity: 0.9, polarity: "positive" },
+  "🔥": { state: "excited", intensity: 0.8, polarity: "positive" },
+  "✨": { state: "excited", intensity: 0.5, polarity: "positive" },
+  "⚡": { state: "excited", intensity: 0.7, polarity: "positive" },
+  "🚀": { state: "excited", intensity: 0.8, polarity: "positive" },
+  "💯": { state: "excited", intensity: 0.8, polarity: "positive" },
 
-  // amused / laughing
-  "😂": { state: "amused", intensity: 0.9 },
-  "🤣": { state: "amused", intensity: 1.0 },
-  "😆": { state: "amused", intensity: 0.8 },
-  "😹": { state: "amused", intensity: 0.8 },
-  "💀": { state: "amused", intensity: 0.9 }, // Gen Z: "I'm dead" = laughing
+  // amused / laughing (often co-emoted with crying — "I'm dying of laughter")
+  "😂": { state: "amused", intensity: 0.9, polarity: "positive" },
+  "🤣": { state: "amused", intensity: 1.0, polarity: "positive" },
+  "😆": { state: "amused", intensity: 0.8, polarity: "positive" },
+  "😹": { state: "amused", intensity: 0.8, polarity: "positive" },
+  // 💀 as Gen Z "I'm dead" (laughing) is positive, despite the icon. A pure
+  // "end of times" reading would be neutral; we bet on the common meaning.
+  "💀": { state: "amused", intensity: 0.9, polarity: "positive" },
 
   // affectionate
-  "🥰": { state: "affectionate", intensity: 0.8 },
-  "😍": { state: "affectionate", intensity: 0.8 },
-  "💖": { state: "affectionate", intensity: 0.8 },
-  "❤️": { state: "affectionate", intensity: 0.7 },
-  "♥️": { state: "affectionate", intensity: 0.6 },
+  "🥰": { state: "affectionate", intensity: 0.8, polarity: "positive" },
+  "😍": { state: "affectionate", intensity: 0.8, polarity: "positive" },
+  "💖": { state: "affectionate", intensity: 0.8, polarity: "positive" },
+  "💕": { state: "affectionate", intensity: 0.7, polarity: "positive" },
+  "❤️": { state: "affectionate", intensity: 0.7, polarity: "positive" },
+  "♥️": { state: "affectionate", intensity: 0.6, polarity: "positive" },
 
-  // sad
-  "😢": { state: "sad", intensity: 0.6 },
-  "😭": { state: "sad", intensity: 0.9 },
-  "😞": { state: "sad", intensity: 0.6 },
-  "😔": { state: "sad", intensity: 0.5 },
-  "💔": { state: "sad", intensity: 0.7 },
+  // sad (intentionally also covers the ambiguous 😭 — it reads "crying" but
+  // Gen Z uses it as hyperbolic excitement. Aggregation settles the tie.)
+  "😢": { state: "sad", intensity: 0.6, polarity: "negative" },
+  "😭": { state: "sad", intensity: 0.9, polarity: "negative" },
+  "😞": { state: "sad", intensity: 0.6, polarity: "negative" },
+  "😔": { state: "sad", intensity: 0.5, polarity: "negative" },
+  "💔": { state: "sad", intensity: 0.7, polarity: "negative" },
 
   // alarmed / worried
-  "😱": { state: "alarmed", intensity: 0.9 },
-  "😨": { state: "alarmed", intensity: 0.7 },
-  "😰": { state: "worried", intensity: 0.7 },
-  "😬": { state: "awkward", intensity: 0.6 },
+  "😱": { state: "alarmed", intensity: 0.9, polarity: "negative" },
+  "😨": { state: "alarmed", intensity: 0.7, polarity: "negative" },
+  "😰": { state: "worried", intensity: 0.7, polarity: "negative" },
+  "😬": { state: "awkward", intensity: 0.6, polarity: "negative" },
 
   // frustrated / angry
-  "😤": { state: "frustrated", intensity: 0.7 },
-  "😡": { state: "angry", intensity: 0.8 },
-  "🤬": { state: "angry", intensity: 0.9 },
+  "😤": { state: "frustrated", intensity: 0.7, polarity: "negative" },
+  "😡": { state: "angry", intensity: 0.8, polarity: "negative" },
+  "🤬": { state: "angry", intensity: 0.9, polarity: "negative" },
 
   // thoughtful
-  "🤔": { state: "thoughtful", intensity: 0.5 },
-  "🧐": { state: "thoughtful", intensity: 0.5 },
+  "🤔": { state: "thoughtful", intensity: 0.5, polarity: "neutral" },
+  "🧐": { state: "thoughtful", intensity: 0.5, polarity: "neutral" },
 
-  // surprised
-  "😮": { state: "surprised", intensity: 0.7 },
-  "😲": { state: "surprised", intensity: 0.8 },
-  "🤯": { state: "surprised", intensity: 0.9 },
+  // surprised — polarity-neutral, context decides
+  "😮": { state: "surprised", intensity: 0.7, polarity: "neutral" },
+  "😲": { state: "surprised", intensity: 0.8, polarity: "neutral" },
+  "🤯": { state: "surprised", intensity: 0.9, polarity: "neutral" },
 
   // calm / chill
-  "😌": { state: "calm", intensity: 0.5 },
-  "😴": { state: "calm", intensity: 0.3 },
-  "🙃": { state: "wry", intensity: 0.5 },
+  "😌": { state: "calm", intensity: 0.5, polarity: "positive" },
+  "😴": { state: "calm", intensity: 0.3, polarity: "neutral" },
+  "🙃": { state: "wry", intensity: 0.5, polarity: "neutral" },
 
   // approval / disapproval
-  "👍": { state: "approving", intensity: 0.5 },
-  "👎": { state: "disapproving", intensity: 0.5 },
-  "🙌": { state: "celebrating", intensity: 0.7 },
+  "👍": { state: "approving", intensity: 0.5, polarity: "positive" },
+  "👎": { state: "disapproving", intensity: 0.5, polarity: "negative" },
+  "🙌": { state: "celebrating", intensity: 0.7, polarity: "positive" },
 };
 
 // Matches Unicode Extended_Pictographic (covers ~all emoji pictographs).
@@ -130,12 +137,49 @@ export function analyzeEmojis(
   return { strippedText: stripped, hints };
 }
 
-/** Collapse a list of hints into a dominant emotion, or null if empty. */
+/**
+ * Collapse a list of hints into a single dominant emotion, or null if empty.
+ *
+ * Strategy: sum intensity per polarity, pick the polarity with the highest
+ * total, then within it return the hint with the highest single intensity.
+ * This prevents one strong negative emoji from overriding a string of
+ * positive ones (e.g. "😭💕🔥" reads as positive/excited, not sad — the
+ * 😭 there is being used as hyperbolic Gen Z excitement).
+ *
+ * Neutrals count toward their own bucket and only win when no valenced
+ * emojis are present. Ties on polarity-total go to the polarity whose
+ * strongest hint is strongest (highest single intensity). A final tie
+ * falls back to first-seen — same deterministic order the hints arrived.
+ */
 export function dominantHint(hints: EmotionHint[]): EmotionHint | null {
   if (hints.length === 0) return null;
-  let best = hints[0] as EmotionHint;
+
+  const totals = { positive: 0, negative: 0, neutral: 0 };
+  const strongest = {
+    positive: null as EmotionHint | null,
+    negative: null as EmotionHint | null,
+    neutral: null as EmotionHint | null,
+  };
+
   for (const h of hints) {
-    if (h.intensity > best.intensity) best = h;
+    totals[h.polarity] += h.intensity;
+    const current = strongest[h.polarity];
+    if (current === null || h.intensity > current.intensity) {
+      strongest[h.polarity] = h;
+    }
   }
-  return best;
+
+  const order: EmotionPolarity[] = ["positive", "negative", "neutral"];
+  let winner: EmotionPolarity = order[0] as EmotionPolarity;
+  for (const p of order) {
+    if (totals[p] > totals[winner]) winner = p;
+    else if (
+      totals[p] === totals[winner] &&
+      (strongest[p]?.intensity ?? 0) > (strongest[winner]?.intensity ?? 0)
+    ) {
+      winner = p;
+    }
+  }
+
+  return strongest[winner];
 }

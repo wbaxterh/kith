@@ -25,8 +25,10 @@ describe("analyzeEmojis", () => {
   });
 
   it("respects a custom map", () => {
-    const r = analyzeEmojis("Nice 🔥", { "🔥": { state: "hyped", intensity: 1 } });
-    expect(r.hints).toEqual([{ state: "hyped", intensity: 1 }]);
+    const r = analyzeEmojis("Nice 🔥", {
+      "🔥": { state: "hyped", intensity: 1, polarity: "positive" },
+    });
+    expect(r.hints).toEqual([{ state: "hyped", intensity: 1, polarity: "positive" }]);
   });
 
   it("does not collapse caller whitespace (streaming-safe)", () => {
@@ -41,20 +43,50 @@ describe("dominantHint", () => {
     expect(dominantHint([])).toBeNull();
   });
 
-  it("picks the highest intensity", () => {
+  it("picks the highest intensity within a single polarity", () => {
     const h = dominantHint([
-      { state: "happy", intensity: 0.4 },
-      { state: "excited", intensity: 0.9 },
-      { state: "calm", intensity: 0.2 },
+      { state: "happy", intensity: 0.4, polarity: "positive" },
+      { state: "excited", intensity: 0.9, polarity: "positive" },
+      { state: "calm", intensity: 0.2, polarity: "positive" },
     ]);
-    expect(h).toEqual({ state: "excited", intensity: 0.9 });
+    expect(h?.state).toBe("excited");
   });
 
-  it("ties go to the first", () => {
+  it("positive emojis outweigh a single stronger negative (Gen Z 😭💕🔥 case)", () => {
+    // This is the real-world bug: "😭💕🔥" read as excitement, not sadness.
     const h = dominantHint([
-      { state: "happy", intensity: 0.5 },
-      { state: "sad", intensity: 0.5 },
+      { state: "sad", intensity: 0.9, polarity: "negative" },
+      { state: "affectionate", intensity: 0.7, polarity: "positive" },
+      { state: "excited", intensity: 0.8, polarity: "positive" },
     ]);
-    expect(h?.state).toBe("happy");
+    // Positive total = 1.5 vs negative total = 0.9 → positive wins,
+    // strongest positive = excited @ 0.8.
+    expect(h?.state).toBe("excited");
+    expect(h?.polarity).toBe("positive");
+  });
+
+  it("single strong negative beats weak positive", () => {
+    const h = dominantHint([
+      { state: "sad", intensity: 0.9, polarity: "negative" },
+      { state: "happy", intensity: 0.3, polarity: "positive" },
+    ]);
+    expect(h?.state).toBe("sad");
+  });
+
+  it("neutrals win when no valenced emojis present", () => {
+    const h = dominantHint([
+      { state: "thoughtful", intensity: 0.5, polarity: "neutral" },
+      { state: "surprised", intensity: 0.7, polarity: "neutral" },
+    ]);
+    expect(h?.state).toBe("surprised");
+  });
+
+  it("tie in totals breaks toward the polarity with the strongest single hint", () => {
+    const h = dominantHint([
+      { state: "happy", intensity: 0.6, polarity: "positive" },
+      { state: "sad", intensity: 0.7, polarity: "negative" },
+      // totals tie at 0.6 / 0.7; negative has the stronger single hint
+    ]);
+    expect(h?.state).toBe("sad");
   });
 });

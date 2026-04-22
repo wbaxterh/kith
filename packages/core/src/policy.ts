@@ -17,7 +17,21 @@ export type TextTransform = (text: string, ctx: TextTransformContext) => string;
 
 /**
  * Pronunciation overrides. Keys are matched case-insensitively as whole words;
- * values are the spoken replacement. Use this for slang / jargon the TTS
+ * values are the spoken replacement. Use this for specific words the TTS
  * provider mispronounces (e.g., `"kickflip": "kick flip"`).
+ *
+ * For expanding abbreviations to full words ("omg" → "oh my god") prefer
+ * `SlangDict` — same shape, but applied earlier in the pipeline so its output
+ * is itself subject to pronunciation overrides.
  */
 export type PronunciationDict = Record<string, string>;
+
+/**
+ * Abbreviation expansion map. Structurally identical to `PronunciationDict`
+ * but semantically and pipeline-ordering distinct: slang expands first (so
+ * TTS speaks the full words), pronunciation corrects after.
+ *
+ * Keys are matched case-insensitively as whole words. The leading capital of
+ * the input is preserved on the replacement (`"OMG"` → `"Oh my god"`).
+ */
+export type SlangDict = Record<string, string>;
