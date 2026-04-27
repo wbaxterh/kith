@@ -7,7 +7,7 @@
  * the envelope `v` key stripped.
  */
 
-import type { KithEvent } from "@kith/core";
+import type { KithEvent } from "@kithjs/core";
 
 export const PROTOCOL_VERSION = 0;
 

@@ -6,7 +6,7 @@
 
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { KithEvent, TtsAudioChunkEvent } from "@kith/core";
+import type { KithEvent, TtsAudioChunkEvent } from "@kithjs/core";
 
 const PORT = Number(process.env.PORT ?? 3030);
 const OUT = path.resolve(process.cwd(), ".smoke-output");

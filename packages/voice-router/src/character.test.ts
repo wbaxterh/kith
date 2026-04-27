@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { EventHandler, RuntimeAdapter, RuntimeConfig, Unsubscribe } from "@kith/core";
+import type { EventHandler, RuntimeAdapter, RuntimeConfig, Unsubscribe } from "@kithjs/core";
 
 import {
   applyVoiceCharacter,

@@ -1,4 +1,4 @@
-import type { PronunciationDict } from "@kith/core";
+import type { PronunciationDict } from "@kithjs/core";
 
 /**
  * Apply a pronunciation dictionary to a piece of text, matching whole words

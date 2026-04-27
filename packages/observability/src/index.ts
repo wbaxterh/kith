@@ -14,7 +14,7 @@
  * decision is emitted as a `RecordedEvent` you can forward.
  */
 
-import type { ObservabilityAdapter, Span } from "@kith/core";
+import type { ObservabilityAdapter, Span } from "@kithjs/core";
 
 export type RecordedEvent =
   | {

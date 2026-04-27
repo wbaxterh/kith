@@ -19,7 +19,7 @@ import type {
   RuntimeAdapter,
   RuntimeConfig,
   Unsubscribe,
-} from "@kith/core";
+} from "@kithjs/core";
 
 export interface LiveKitRuntimeOptions {
   /**

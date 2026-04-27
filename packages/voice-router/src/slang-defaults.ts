@@ -1,4 +1,4 @@
-import type { SlangDict } from "@kith/core";
+import type { SlangDict } from "@kithjs/core";
 
 /**
  * Universal English text-speak — abbreviations that cross every demographic.

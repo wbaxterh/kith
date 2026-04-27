@@ -1,4 +1,4 @@
-import type { PersonaMode, PronunciationDict, SlangDict } from "@kith/core";
+import type { PersonaMode, PronunciationDict, SlangDict } from "@kithjs/core";
 
 import type { EmotionHint } from "./emoji-sentiment.ts";
 import type { VoiceRouter } from "./router.ts";
@@ -21,7 +21,7 @@ import type { VoiceRouter } from "./router.ts";
  *     DEFAULT_BOARD_SPORTS_SLANG,
  *     VoiceRouter,
  *     voiceCharacterToRuntimeConfig,
- *   } from "@kith/voice-router";
+ *   } from "@kithjs/voice-router";
  *
  *   const runtime = new PipecatRuntime({
  *     pythonPath: …, cwd: …,

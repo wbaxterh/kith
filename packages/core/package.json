@@ -1,5 +1,5 @@
 {
-  "name": "@kith/core",
+  "name": "@kithjs/core",
   "version": "0.1.0",
   "description": "Stable adapter contracts and event bus for Kith.",
   "type": "module",

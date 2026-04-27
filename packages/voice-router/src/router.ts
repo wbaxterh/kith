@@ -8,7 +8,7 @@ import type {
   TextTransform,
   TextTransformContext,
   Unsubscribe,
-} from "@kith/core";
+} from "@kithjs/core";
 
 import type { VoiceCharacter } from "./character.ts";
 import { SentenceChunker } from "./chunker.ts";

@@ -8,7 +8,7 @@
  * Assumes the server is already running (bun run dev).
  */
 
-import type { KithEvent } from "@kith/core";
+import type { KithEvent } from "@kithjs/core";
 
 const PORT = Number(process.env.PORT ?? 3030);
 

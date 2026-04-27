@@ -9,7 +9,7 @@
  */
 
 import { describe, expect, test } from "bun:test";
-import type { KithEvent } from "@kith/core";
+import type { KithEvent } from "@kithjs/core";
 import { LiveKitRuntime } from "../runtime.ts";
 
 describe("LiveKitRuntime portability", () => {

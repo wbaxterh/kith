@@ -9,15 +9,15 @@
  */
 
 import path from "node:path";
-import type { KithEvent } from "@kith/core";
-import { PipecatRuntime } from "@kith/runtime-pipecat";
+import type { KithEvent } from "@kithjs/core";
+import { PipecatRuntime } from "@kithjs/runtime-pipecat";
 import {
   DEFAULT_BOARD_SPORTS_SLANG,
   DEFAULT_ENGLISH_SLANG,
   DEFAULT_GENZ_SLANG,
   DEFAULT_LAUGH_TAGS,
   VoiceRouter,
-} from "@kith/voice-router";
+} from "@kithjs/voice-router";
 import type { ServerWebSocket } from "bun";
 
 import companionSlang from "../../../examples/companion-slang-skate.json" with { type: "json" };

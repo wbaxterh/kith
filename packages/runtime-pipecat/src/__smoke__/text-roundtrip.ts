@@ -8,7 +8,7 @@
  */
 
 import path from "node:path";
-import type { KithEvent } from "@kith/core";
+import type { KithEvent } from "@kithjs/core";
 
 import { PipecatRuntime } from "../runtime.ts";
 

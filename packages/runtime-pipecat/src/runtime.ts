@@ -18,7 +18,7 @@ import type {
   RuntimeAdapter,
   RuntimeConfig,
   Unsubscribe,
-} from "@kith/core";
+} from "@kithjs/core";
 
 import { type Op, toKithEvent, type WireEvent } from "./envelope.ts";
 import { type SidecarHandle, type SidecarOptions, spawnSidecar } from "./sidecar.ts";
