@@ -1,12 +1,10 @@
 /**
- * @kith/runtime-livekit — placeholder.
+ * @kith/runtime-livekit — LiveKit RuntimeAdapter for Kith.
  *
- * Day 10 of the v0.1 plan lands a stub adapter that passes one integration
- * test (send text → get audio → emit at least one normalized event). Scope
- * is deliberately minimal to prove portability without becoming a second
- * production path.
+ * v0.1 ships a mock-mode adapter that proves the RuntimeAdapter contract is
+ * portable across runtimes. Real LiveKit WebRTC integration → v0.2.
  *
  * See `docs/phase-1-planning.md` §4 Week 2 for details.
  */
 
-export {};
+export { LiveKitRuntime, type LiveKitRuntimeOptions } from "./runtime.ts";
