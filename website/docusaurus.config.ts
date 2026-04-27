@@ -11,7 +11,7 @@ const config: Config = {
     v4: true,
   },
 
-  url: 'https://kithjs.dev',
+  url: 'https://kith.weshuber.com',
   baseUrl: '/',
 
   organizationName: 'wbaxterh',

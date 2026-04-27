@@ -104,11 +104,14 @@ your agent  <-->  @kithjs/core  <-->  runtime adapter  <-->  Pipecat | LiveKit
 
 ## Documentation
 
-- **[Tutorial: Build your first companion in 15 minutes](docs/tutorial.md)**
-- [Architecture](docs/architecture.md) — system diagram, adapter contracts, event bus
-- [Protocol](docs/protocol.md) — TS to Python JSON envelope spec
-- [Phase 1 Planning](docs/phase-1-planning.md) — v0.1 scope and decisions
-- [Changelog](CHANGELOG.md)
+**[kith.weshuber.com](https://kith.weshuber.com)** — full docs site with guides, API reference, and tutorials.
+
+- [Getting Started](https://kith.weshuber.com/docs/getting-started) — install and run in 5 minutes
+- [Tutorial: Build your first companion](https://kith.weshuber.com/docs/tutorial) — 15-minute walkthrough
+- [Architecture](https://kith.weshuber.com/docs/concepts/architecture) — system diagram, adapter contracts
+- [Voice Characters](https://kith.weshuber.com/docs/concepts/voice-characters) — define your companion's voice personality
+- [Kaori Case Study](https://kith.weshuber.com/docs/guides/kaori-case-study) — production integration example
+- [Roadmap](https://kith.weshuber.com/docs/roadmap) — what's coming in v0.2 and beyond
 
 ## Roadmap
 
