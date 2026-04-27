@@ -1,6 +1,6 @@
 {
   "name": "@kith/observability",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Traces, dup-send guards, and reconnect metrics for Kith.",
   "type": "module",
   "main": "./src/index.ts",
@@ -8,12 +8,23 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": ["src", "README.md"],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbaxterh/kith",
+    "directory": "packages/observability"
+  },
+  "keywords": ["kith", "observability", "tracing", "voice"],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@kith/core": "workspace:*"
+    "@kith/core": "^0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

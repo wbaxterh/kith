@@ -1,6 +1,6 @@
 {
   "name": "@kith/runtime-pipecat",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Pipecat runtime adapter for Kith — TS facade over a Python Pipecat sidecar.",
   "type": "module",
   "main": "./src/index.ts",
@@ -8,11 +8,22 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": ["src", "python", "README.md"],
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbaxterh/kith",
+    "directory": "packages/runtime-pipecat"
+  },
+  "keywords": ["kith", "pipecat", "voice", "tts", "runtime"],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@kith/core": "workspace:*"
+    "@kith/core": "^0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

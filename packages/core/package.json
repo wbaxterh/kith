@@ -1,6 +1,6 @@
 {
   "name": "@kith/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Stable adapter contracts and event bus for Kith.",
   "type": "module",
   "main": "./src/index.ts",
@@ -8,8 +8,19 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": ["src", "README.md"],
   "scripts": {
     "typecheck": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbaxterh/kith",
+    "directory": "packages/core"
+  },
+  "keywords": ["kith", "voice", "ai-companion", "tts", "adapter"],
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

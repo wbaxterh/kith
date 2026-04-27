@@ -1,18 +1,30 @@
 {
   "name": "@kith/runtime-livekit",
-  "version": "0.0.0",
-  "description": "LiveKit runtime adapter for Kith (v0.1 portability stub).",
+  "version": "0.1.0",
+  "description": "LiveKit runtime adapter for Kith (v0.1 mock-mode portability stub).",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": ["src", "README.md"],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbaxterh/kith",
+    "directory": "packages/runtime-livekit"
+  },
+  "keywords": ["kith", "livekit", "voice", "tts", "runtime", "webrtc"],
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
-    "@kith/core": "workspace:*"
+    "@kith/core": "^0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

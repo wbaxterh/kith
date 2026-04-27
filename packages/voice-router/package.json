@@ -1,6 +1,6 @@
 {
   "name": "@kith/voice-router",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "TTS provider router for Kith — sentence-aware chunking, pronunciation, pacing, fallback.",
   "type": "module",
   "main": "./src/index.ts",
@@ -8,12 +8,23 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "files": ["src", "README.md"],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "bun test"
   },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbaxterh/kith",
+    "directory": "packages/voice-router"
+  },
+  "keywords": ["kith", "voice", "tts", "chunking", "pronunciation", "slang"],
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
-    "@kith/core": "workspace:*"
+    "@kith/core": "^0.1.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"
