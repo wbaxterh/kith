@@ -1,10 +1,19 @@
 /**
- * @kith/avatar-events — placeholder.
+ * @kithjs/avatar-events — VRM avatar utilities for Kith.
  *
- * Day 6-7 of the v0.1 plan wires this into the web demo. v0.1 scope is event
- * emission only — consumers render. VRM loading, skeletal animation, and
- * real phoneme-to-viseme mapping are deferred to v0.2 per
- * `docs/phase-1-planning.md` §3.
+ * Phoneme-to-viseme mapping, expression state machine, and blend shape
+ * helpers for rendering avatar expressions driven by KithEvents.
  */
 
-export {};
+export {
+  type BlendShapeTarget,
+  blendShapeNames,
+  mapVisemeToBlendShape,
+  supportedVisemes,
+} from "./viseme-map.ts";
+
+export {
+  ExpressionState,
+  type ExpressionSnapshot,
+  type ExpressionStateOptions,
+} from "./expression-state.ts";
