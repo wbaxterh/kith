@@ -26,6 +26,14 @@
   "dependencies": {
     "@kithjs/core": "^0.1.0"
   },
+  "peerDependencies": {
+    "livekit-client": ">=2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "livekit-client": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "typescript": "^5.6.0"
   }

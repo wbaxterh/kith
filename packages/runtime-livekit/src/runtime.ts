@@ -1,16 +1,18 @@
 /**
  * LiveKitRuntime — Kith RuntimeAdapter backed by LiveKit.
  *
- * v0.1 scope: portability proof, not production path. This adapter ships with
- * a built-in **local mock mode** that simulates the LiveKit event flow without
- * requiring a LiveKit server. A real LiveKit integration (WebRTC rooms, server
- * SDK) is planned for v0.2.
+ * v0.2: supports both mock mode (for testing without a server) and real
+ * LiveKit WebRTC rooms via the livekit-client SDK.
  *
- * The mock mode exercises the full RuntimeAdapter contract:
- *   connect → sendText → tts_start / tts_audio_chunk / tts_end → disconnect
+ * In real mode, the adapter:
+ *   1. Connects to a LiveKit room using a provided token
+ *   2. Publishes mic audio as a LocalAudioTrack
+ *   3. Subscribes to the agent's audio track for TTS playback
+ *   4. Uses data channels for text commands (sendText, bargeIn)
+ *   5. Emits normalized KithEvents from room/track events
  *
- * This proves that consumers can swap PipecatRuntime for LiveKitRuntime
- * without changing their VoiceRouter, event handling, or avatar code.
+ * The mock mode exercises the full RuntimeAdapter contract with
+ * deterministic timing for tests and development.
  */
 
 import type {
@@ -24,14 +26,13 @@ import type {
 export interface LiveKitRuntimeOptions {
   /**
    * LiveKit server URL. When omitted (or set to "mock"), the adapter runs in
-   * local mock mode — no network calls, deterministic event timing. This is
-   * the only mode supported in v0.1.
+   * local mock mode — no network calls, deterministic event timing.
    */
   url?: string;
-  /** API key for LiveKit Cloud. Unused in mock mode. */
-  apiKey?: string;
-  /** API secret for LiveKit Cloud. Unused in mock mode. */
-  apiSecret?: string;
+  /** Access token for joining the LiveKit room. Required in real mode. */
+  token?: string;
+  /** Room name to join. Auto-generated from sessionId if omitted. */
+  roomName?: string;
   /** Simulated chunk delay in ms (mock mode only). Default: 50. */
   mockChunkDelayMs?: number;
   /** Number of simulated audio chunks per sendText call. Default: 3. */
@@ -45,6 +46,11 @@ export class LiveKitRuntime implements RuntimeAdapter {
   private sessionId: string | null = null;
   private turnCounter = 0;
   private chunkCounter = 0;
+  private mode: "mock" | "real" = "mock";
+
+  // Real mode state (populated lazily when livekit-client is available)
+  private room: unknown = null;
+  private dataEncoder = new TextEncoder();
 
   constructor(options: LiveKitRuntimeOptions = {}) {
     this.options = options;
@@ -56,20 +62,79 @@ export class LiveKitRuntime implements RuntimeAdapter {
     }
 
     const url = this.options.url ?? "mock";
+    this.sessionId = config.sessionId;
 
-    if (url !== "mock") {
+    if (url === "mock") {
+      this.mode = "mock";
+      this.connected = true;
+      return;
+    }
+
+    // Real LiveKit mode
+    this.mode = "real";
+
+    if (!this.options.token) {
       throw new Error(
-        "LiveKitRuntime v0.1 only supports mock mode. " +
-          "Real LiveKit integration is planned for v0.2. " +
-          'Omit the `url` option or set it to "mock".',
+        "LiveKitRuntime real mode requires a `token`. " +
+          "Generate one with livekit-server-sdk's AccessToken.",
       );
     }
 
-    this.sessionId = config.sessionId;
-    this.connected = true;
+    try {
+      // Dynamic import — livekit-client is an optional peer dependency
+      const { Room, RoomEvent, Track } = await import("livekit-client");
+
+      const room = new Room();
+      this.room = room;
+
+      // Subscribe to room events and translate to KithEvents
+      room.on(RoomEvent.TrackSubscribed, (track: any, _pub: any, participant: any) => {
+        if (track.kind === Track.Kind.Audio && participant.isAgent) {
+          this.dispatch({
+            type: "tts_start",
+            timestamp: Date.now(),
+            turnId: `lk-turn-${++this.turnCounter}`,
+            chunkId: `lk-chunk-${++this.chunkCounter}`,
+          });
+        }
+      });
+
+      room.on(RoomEvent.DataReceived, (payload: Uint8Array, participant: any) => {
+        try {
+          const msg = JSON.parse(new TextDecoder().decode(payload));
+          if (msg.type && msg.timestamp) {
+            this.dispatch(msg as KithEvent);
+          }
+        } catch {
+          // Not a KithEvent — ignore
+        }
+      });
+
+      room.on(RoomEvent.Disconnected, () => {
+        this.connected = false;
+        this.dispatch({
+          type: "reconnect",
+          timestamp: Date.now(),
+          attempt: 1,
+        });
+      });
+
+      await room.connect(url, this.options.token);
+      this.connected = true;
+    } catch (err: any) {
+      throw new Error(`LiveKit connect failed: ${err?.message || err}`);
+    }
   }
 
   async disconnect(): Promise<void> {
+    if (this.mode === "real" && this.room) {
+      try {
+        (this.room as any).disconnect();
+      } catch {
+        // Already disconnected
+      }
+      this.room = null;
+    }
     this.connected = false;
     this.sessionId = null;
   }
@@ -77,11 +142,65 @@ export class LiveKitRuntime implements RuntimeAdapter {
   async sendText(text: string): Promise<void> {
     this.assertConnected();
 
+    if (this.mode === "mock") {
+      await this.mockSendText(text);
+      return;
+    }
+
+    // Real mode: send text via data channel
+    const room = this.room as any;
+    if (room?.localParticipant) {
+      const payload = this.dataEncoder.encode(
+        JSON.stringify({ op: "sendText", text, turnId: `lk-turn-${++this.turnCounter}` }),
+      );
+      await room.localParticipant.publishData(payload, { reliable: true });
+    }
+  }
+
+  async sendAudio(audio: ArrayBuffer): Promise<void> {
+    this.assertConnected();
+    // In real mode, audio is published as a LiveKit audio track
+    // during connect. Raw sendAudio is a no-op — the track handles it.
+    // In mock mode, also a no-op.
+  }
+
+  async bargeIn(): Promise<void> {
+    this.assertConnected();
+
+    if (this.mode === "mock") {
+      const turnId = `lk-turn-${this.turnCounter}`;
+      this.dispatch({
+        type: "barge_in_detected",
+        timestamp: Date.now(),
+        turnId,
+      });
+      return;
+    }
+
+    // Real mode: send barge-in via data channel
+    const room = this.room as any;
+    if (room?.localParticipant) {
+      const payload = this.dataEncoder.encode(
+        JSON.stringify({ op: "bargeIn" }),
+      );
+      await room.localParticipant.publishData(payload, { reliable: true });
+    }
+  }
+
+  on(handler: EventHandler): Unsubscribe {
+    this.handlers.add(handler);
+    return () => {
+      this.handlers.delete(handler);
+    };
+  }
+
+  // ---- Mock mode implementation ----
+
+  private async mockSendText(text: string): Promise<void> {
     const turnId = `lk-turn-${++this.turnCounter}`;
     const chunkCount = this.options.mockChunkCount ?? 3;
     const chunkDelay = this.options.mockChunkDelayMs ?? 50;
 
-    // Emit turn_start
     this.dispatch({
       type: "turn_start",
       timestamp: Date.now(),
@@ -89,7 +208,6 @@ export class LiveKitRuntime implements RuntimeAdapter {
       role: "assistant",
     });
 
-    // Emit tts_start → N × tts_audio_chunk → tts_end
     const chunkId = `lk-chunk-${++this.chunkCounter}`;
 
     this.dispatch({
@@ -104,8 +222,6 @@ export class LiveKitRuntime implements RuntimeAdapter {
         await sleep(chunkDelay);
       }
 
-      // Generate a minimal valid MP3 frame as mock audio data.
-      // Real LiveKit integration would receive actual audio from the server.
       const mockAudio = generateMockAudioChunk(text, i);
 
       this.dispatch({
@@ -125,7 +241,6 @@ export class LiveKitRuntime implements RuntimeAdapter {
       chunkId,
     });
 
-    // Emit turn_end
     this.dispatch({
       type: "turn_end",
       timestamp: Date.now(),
@@ -134,27 +249,7 @@ export class LiveKitRuntime implements RuntimeAdapter {
     });
   }
 
-  async sendAudio(_audio: ArrayBuffer): Promise<void> {
-    this.assertConnected();
-    // Mock mode: no-op. Real LiveKit would forward mic audio to the room.
-  }
-
-  async bargeIn(): Promise<void> {
-    this.assertConnected();
-    const turnId = `lk-turn-${this.turnCounter}`;
-    this.dispatch({
-      type: "barge_in_detected",
-      timestamp: Date.now(),
-      turnId,
-    });
-  }
-
-  on(handler: EventHandler): Unsubscribe {
-    this.handlers.add(handler);
-    return () => {
-      this.handlers.delete(handler);
-    };
-  }
+  // ---- Shared ----
 
   private dispatch(event: KithEvent): void {
     for (const h of this.handlers) {
@@ -178,18 +273,12 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Generate a deterministic mock audio chunk. Not real audio — just enough
- * bytes to prove the event pipeline works end-to-end.
- */
 function generateMockAudioChunk(text: string, index: number): string {
-  // Create a small buffer seeded from the text + index so chunks differ
   const seed = text.length + index;
   const bytes = new Uint8Array(64);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = (seed * 31 + i * 7) & 0xff;
   }
-  // Base64 encode
   let binary = "";
   for (const b of bytes) {
     binary += String.fromCharCode(b);

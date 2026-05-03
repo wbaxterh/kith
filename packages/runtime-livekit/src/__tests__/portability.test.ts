@@ -100,12 +100,12 @@ describe("LiveKitRuntime portability", () => {
     expect(runtime.sendText("hello")).rejects.toThrow("not connected");
   });
 
-  test("rejects non-mock URL in v0.1", async () => {
+  test("real mode requires a token", async () => {
     const runtime = new LiveKitRuntime({ url: "wss://my-livekit.cloud" });
 
     expect(
       runtime.connect({ sessionId: "test-real" }),
-    ).rejects.toThrow("only supports mock mode");
+    ).rejects.toThrow("requires a `token`");
   });
 
   test("VoiceRouter compatibility — same event shape as PipecatRuntime", async () => {
