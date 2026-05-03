@@ -28,6 +28,7 @@ from .envelope import (
 from .fallback_pipeline import FallbackPipeline
 from .openai_tts_pipeline import OpenAITTSPipeline
 from .pipeline import MockPipeline, Pipeline
+from .stt_processor import SttProcessor
 
 _PIPELINES: dict[str, type[Pipeline]] = {
     "mock": MockPipeline,
@@ -48,6 +49,7 @@ class RuntimeServer:
     def __init__(self, default_pipeline: str = "mock") -> None:
         self._default_pipeline = default_pipeline
         self._pipeline: Pipeline | None = None
+        self._stt: SttProcessor | None = None
         self._ws: ServerConnection | None = None
         self._shutdown = asyncio.Event()
 
@@ -67,6 +69,9 @@ class RuntimeServer:
             async for raw in ws:
                 await self._handle_message(raw)
         finally:
+            if self._stt is not None:
+                await self._stt.stop()
+            self._stt = None
             if self._pipeline is not None:
                 await self._pipeline.stop()
             self._pipeline = None
@@ -107,6 +112,16 @@ class RuntimeServer:
                     ),
                 )
                 return
+
+            # Start STT processor alongside TTS pipeline
+            self._stt = SttProcessor(self._emit)
+            try:
+                await self._stt.start(op.config)
+            except Exception as exc:  # noqa: BLE001
+                # STT failure is non-fatal — voice output still works
+                print(f"[stt] start failed (non-fatal): {exc}", flush=True)
+                self._stt = None
+
             await self._emit(ReadyEvent(timestamp=_now_ms()))
             return
 
@@ -118,7 +133,10 @@ class RuntimeServer:
             case "sendText":
                 await pipeline.handle_text(op.text, op.turn_id)
             case "sendAudio":
+                # Route audio to both pipeline (for passthrough) and STT processor
                 await pipeline.handle_audio(op.audio_b64, op.sample_rate)
+                if self._stt is not None:
+                    await self._stt.handle_audio(op.audio_b64, op.sample_rate)
             case "bargeIn":
                 await pipeline.barge_in()
             case "disconnect":
