@@ -16,6 +16,7 @@ from typing import Any
 from pydantic import TypeAdapter, ValidationError
 from websockets.asyncio.server import ServerConnection, serve
 
+from .cartesia_pipeline import CartesiaPipeline
 from .elevenlabs_pipeline import ElevenLabsPipeline
 from .envelope import (
     ErrorEvent,
@@ -24,11 +25,16 @@ from .envelope import (
     WireEvent,
     serialize,
 )
+from .fallback_pipeline import FallbackPipeline
+from .openai_tts_pipeline import OpenAITTSPipeline
 from .pipeline import MockPipeline, Pipeline
 
 _PIPELINES: dict[str, type[Pipeline]] = {
     "mock": MockPipeline,
     "elevenlabs": ElevenLabsPipeline,
+    "openai_tts": OpenAITTSPipeline,
+    "cartesia": CartesiaPipeline,
+    "fallback": FallbackPipeline,
 }
 
 OpAdapter: TypeAdapter[Op] = TypeAdapter(Op)
