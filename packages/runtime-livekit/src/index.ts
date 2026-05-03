@@ -8,3 +8,4 @@
  */
 
 export { LiveKitRuntime, type LiveKitRuntimeOptions } from "./runtime.ts";
+export { checkRNGlobals, createRNLiveKitRuntime, type RNLiveKitOptions } from "./react-native.ts";
