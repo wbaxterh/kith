@@ -1,0 +1,35 @@
+{
+  "name": "@kithjs/openclaw",
+  "version": "0.2.0",
+  "description": "Kith voice plugin for OpenClaw — natural TTS with sentence chunking, slang expansion, multi-provider fallback, and avatar events.",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": ["src", "openclaw.plugin.json", "README.md"],
+  "openclaw": {
+    "extensions": ["./src/index.ts"]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wbaxterh/kith",
+    "directory": "packages/openclaw"
+  },
+  "keywords": ["kith", "openclaw", "voice", "tts", "plugin", "ai-companion"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@kithjs/core": "^0.2.0",
+    "@kithjs/voice-router": "^0.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

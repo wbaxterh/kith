@@ -197,13 +197,44 @@ function PackagesSection() {
   );
 }
 
-const integrations = [
-  { name: 'ElizaOS', desc: 'Multi-agent operating system', href: 'https://elizaos.ai' },
-  { name: 'LangGraph', desc: 'Stateful agent orchestration', href: 'https://langchain-ai.github.io/langgraph/' },
-  { name: 'Pipecat', desc: 'Realtime voice pipeline', href: 'https://github.com/pipecat-ai/pipecat' },
-  { name: 'LiveKit', desc: 'WebRTC infrastructure', href: 'https://livekit.io' },
-  { name: 'ElevenLabs', desc: 'Neural text-to-speech', href: 'https://elevenlabs.io' },
-  { name: 'Custom Agents', desc: 'Your own orchestrator', href: '/docs/getting-started' },
+const frameworks = [
+  {
+    name: 'OpenClaw',
+    desc: 'One-line install as an OpenClaw voice plugin',
+    install: 'openclaw plugins install @kithjs/openclaw',
+    href: 'https://openclaw.ai',
+    badge: 'Plugin',
+  },
+  {
+    name: 'ElizaOS',
+    desc: 'Voice layer for ElizaOS agent characters',
+    install: 'bun add @kithjs/core @kithjs/runtime-pipecat @kithjs/voice-router',
+    href: 'https://elizaos.ai',
+    badge: 'Compatible',
+  },
+  {
+    name: 'LangGraph',
+    desc: 'Add voice to LangGraph agent workflows',
+    install: 'npm install @kithjs/core @kithjs/runtime-pipecat @kithjs/voice-router',
+    href: 'https://langchain-ai.github.io/langgraph/',
+    badge: 'Compatible',
+  },
+  {
+    name: 'Custom Agents',
+    desc: 'Works with any agent framework or orchestrator',
+    install: 'bun add @kithjs/core @kithjs/runtime-pipecat @kithjs/voice-router',
+    href: '/docs/getting-started',
+    badge: 'Universal',
+  },
+];
+
+const providers = [
+  { name: 'ElevenLabs', desc: 'Primary TTS — v3 with laugh tags', href: 'https://elevenlabs.io' },
+  { name: 'OpenAI TTS', desc: 'Fallback — tts-1 and tts-1-hd', href: 'https://platform.openai.com' },
+  { name: 'Cartesia', desc: 'Fallback — Sonic low-latency TTS', href: 'https://cartesia.ai' },
+  { name: 'Pipecat', desc: 'Realtime voice pipeline runtime', href: 'https://github.com/pipecat-ai/pipecat' },
+  { name: 'LiveKit', desc: 'WebRTC runtime + React Native', href: 'https://livekit.io' },
+  { name: 'Deepgram', desc: 'Speech-to-text (Nova)', href: 'https://deepgram.com' },
 ];
 
 function IntegrationsSection() {
@@ -211,18 +242,41 @@ function IntegrationsSection() {
     <section className={styles.featuresSection}>
       <div className="container">
         <Heading as="h2" className={styles.sectionTitle}>
-          Works with the tools you already use
+          Drop into your stack in one command
         </Heading>
         <p className={styles.sectionSub}>
-          Kith is the voice layer — plug it into any agent framework or TTS provider.
+          Kith works with every major agent framework. Pick yours.
         </p>
         <div className="row">
-          {integrations.map((item, idx) => (
-            <div className="col col--4" key={idx} style={{marginBottom: '1rem'}}>
-              <a href={item.href} style={{textDecoration: 'none'}}>
+          {frameworks.map((fw, idx) => (
+            <div className="col col--6" key={idx} style={{marginBottom: '1.5rem'}}>
+              <a href={fw.href} style={{textDecoration: 'none'}}>
                 <div className={styles.featureCard}>
-                  <div className={styles.featureTitle}>{item.name}</div>
-                  <div className={styles.featureDesc}>{item.desc}</div>
+                  <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem'}}>
+                    <div className={styles.featureTitle} style={{margin: 0}}>{fw.name}</div>
+                    <span className={styles.integrationBadge}>{fw.badge}</span>
+                  </div>
+                  <div className={styles.featureDesc} style={{marginBottom: '0.75rem'}}>{fw.desc}</div>
+                  <code className={styles.installSnippet}>{fw.install}</code>
+                </div>
+              </a>
+            </div>
+          ))}
+        </div>
+
+        <Heading as="h3" className={styles.sectionTitle} style={{marginTop: '3rem'}}>
+          Supported providers
+        </Heading>
+        <p className={styles.sectionSub}>
+          TTS, STT, and realtime infrastructure — with automatic fallback.
+        </p>
+        <div className="row">
+          {providers.map((p, idx) => (
+            <div className="col col--4" key={idx} style={{marginBottom: '1rem'}}>
+              <a href={p.href} style={{textDecoration: 'none'}}>
+                <div className={styles.featureCard}>
+                  <div className={styles.featureTitle}>{p.name}</div>
+                  <div className={styles.featureDesc}>{p.desc}</div>
                 </div>
               </a>
             </div>

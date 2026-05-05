@@ -1,0 +1,45 @@
+{
+  "id": "kith-voice",
+  "name": "Kith Voice",
+  "description": "Natural AI companion voice — sentence-aware TTS, slang expansion, multi-provider fallback, emoji-to-emotion, and avatar events powered by Kith.",
+  "version": "0.2.0",
+  "author": "Wesley Huber",
+  "homepage": "https://kith.weshuber.com",
+  "repository": "https://github.com/wbaxterh/kith",
+  "capabilities": ["speech-provider", "hook"],
+  "configuration": {
+    "provider": {
+      "type": "string",
+      "description": "TTS provider: elevenlabs | openai_tts | cartesia | fallback",
+      "default": "elevenlabs"
+    },
+    "voiceId": {
+      "type": "string",
+      "description": "Voice ID for the primary TTS provider"
+    },
+    "modelId": {
+      "type": "string",
+      "description": "TTS model ID (e.g. eleven_v3, tts-1-hd)",
+      "default": "eleven_v3"
+    },
+    "characterProfile": {
+      "type": "string",
+      "description": "Path to a Kith VoiceCharacter JSON file for voice personality"
+    },
+    "enableSlang": {
+      "type": "boolean",
+      "description": "Enable slang expansion (fr → for real, lol → [laughs])",
+      "default": true
+    },
+    "enableEmoji": {
+      "type": "boolean",
+      "description": "Enable emoji-to-emotion event conversion",
+      "default": true
+    },
+    "fallbackProviders": {
+      "type": "array",
+      "description": "Ordered list of fallback TTS providers",
+      "default": ["elevenlabs", "openai_tts"]
+    }
+  }
+}
