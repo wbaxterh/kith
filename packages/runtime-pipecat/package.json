@@ -1,6 +1,6 @@
 {
   "name": "@kithjs/runtime-pipecat",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pipecat runtime adapter for Kith — TS facade over a Python Pipecat sidecar.",
   "type": "module",
   "main": "./src/index.ts",
@@ -23,7 +23,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@kithjs/core": "^0.1.0"
+    "@kithjs/core": "^0.2.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

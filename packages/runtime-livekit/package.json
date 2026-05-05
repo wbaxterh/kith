@@ -1,6 +1,6 @@
 {
   "name": "@kithjs/runtime-livekit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "LiveKit runtime adapter for Kith (v0.1 mock-mode portability stub).",
   "type": "module",
   "main": "./src/index.ts",
@@ -25,7 +25,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@kithjs/core": "^0.1.0"
+    "@kithjs/core": "^0.2.0"
   },
   "peerDependencies": {
     "livekit-client": ">=2.0.0"
