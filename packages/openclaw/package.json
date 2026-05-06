@@ -1,6 +1,6 @@
 {
   "name": "@kithjs/openclaw",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Kith voice plugin for OpenClaw — natural TTS with sentence chunking, slang expansion, multi-provider fallback, and avatar events.",
   "type": "module",
   "main": "./src/index.ts",
