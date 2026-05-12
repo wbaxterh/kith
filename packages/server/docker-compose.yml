@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  kith-voice:
+    build:
+      context: ../..
+      dockerfile: packages/server/Dockerfile
+    ports:
+      - "3040:3040"
+    environment:
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-kPzsL2i3teMYv0FxEYQ6}
+      - ELEVENLABS_MODEL_ID=${ELEVENLABS_MODEL_ID:-eleven_v3}
+      - KITH_CHARACTER_DIR=/app/server/characters
+      - PORT=3040
+    volumes:
+      - ./characters:/app/server/characters:ro

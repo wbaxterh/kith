@@ -1,0 +1,12 @@
+{
+  "voice": {
+    "stability": 0.5,
+    "similarityBoost": 0.85,
+    "style": 0.4,
+    "useSpeakerBoost": true,
+    "speed": 1.0
+  },
+  "slang": {},
+  "pronunciation": {},
+  "personaMode": "neutral"
+}
