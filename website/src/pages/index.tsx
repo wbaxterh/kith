@@ -67,6 +67,9 @@ const packages = [
   { name: '@kithjs/voice-router', desc: 'Sentence chunking, slang, pronunciation, emoji-to-emotion', href: 'https://www.npmjs.com/package/@kithjs/voice-router' },
   { name: '@kithjs/observability', desc: 'Traces, dup-send guards, reconnect metrics', href: 'https://www.npmjs.com/package/@kithjs/observability' },
   { name: '@kithjs/avatar-events', desc: 'Normalized avatar/expression events', href: 'https://www.npmjs.com/package/@kithjs/avatar-events' },
+  { name: '@kithjs/server', desc: 'Standalone voice microservice — POST text, get audio', href: 'https://www.npmjs.com/package/@kithjs/server' },
+  { name: '@kithjs/client', desc: 'TypeScript client for @kithjs/server', href: 'https://www.npmjs.com/package/@kithjs/client' },
+  { name: '@kithjs/elizaos', desc: 'ElizaOS plugin — replaces plugin-elevenlabs', href: 'https://www.npmjs.com/package/@kithjs/elizaos' },
 ];
 
 function HeroSection() {
@@ -207,10 +210,10 @@ const frameworks = [
   },
   {
     name: 'ElizaOS',
-    desc: 'Voice layer for ElizaOS agent characters',
-    install: 'bun add @kithjs/core @kithjs/runtime-pipecat @kithjs/voice-router',
-    href: 'https://elizaos.ai',
-    badge: 'Compatible',
+    desc: 'Drop-in replacement for plugin-elevenlabs. One command.',
+    install: 'bun add @kithjs/elizaos',
+    href: '/docs/packages/elizaos',
+    badge: 'Plugin',
   },
   {
     name: 'LangGraph',
@@ -218,6 +221,13 @@ const frameworks = [
     install: 'npm install @kithjs/core @kithjs/runtime-pipecat @kithjs/voice-router',
     href: 'https://langchain-ai.github.io/langgraph/',
     badge: 'Compatible',
+  },
+  {
+    name: 'Standalone Server',
+    desc: 'Voice microservice for any app. POST text, get streaming audio.',
+    install: 'bun add @kithjs/server && ELEVENLABS_API_KEY=sk_... bun @kithjs/server',
+    href: '/docs/packages/server',
+    badge: 'Docker',
   },
   {
     name: 'Custom Agents',

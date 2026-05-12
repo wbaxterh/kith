@@ -20,6 +20,9 @@ const sidebars: SidebarsConfig = {
         'packages/voice-router',
         'packages/observability',
         'packages/avatar-events',
+        'packages/server',
+        'packages/client',
+        'packages/elizaos',
       ],
     },
     {
