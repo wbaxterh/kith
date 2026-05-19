@@ -15,6 +15,12 @@ export {
 export { applyPronunciation } from "./pronunciation.ts";
 export { VoiceRouter, type VoiceRouterOptions } from "./router.ts";
 export {
+  type VoiceParamDelta,
+  applyEmotionToVoiceSettings,
+  getEmotionVoiceParams,
+  supportedEmotions,
+} from "./emotion-voice.ts";
+export {
   DEFAULT_BOARD_SPORTS_SLANG,
   DEFAULT_ENGLISH_SLANG,
   DEFAULT_GENZ_SLANG,
