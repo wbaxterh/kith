@@ -17,3 +17,10 @@ export {
   type ExpressionSnapshot,
   type ExpressionStateOptions,
 } from "./expression-state.ts";
+
+export {
+  DEFAULT_GESTURE_POSES,
+  type GesturePose,
+  ProceduralAnimator,
+  type AnimatorOptions,
+} from "./procedural-animator.ts";
