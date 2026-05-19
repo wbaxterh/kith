@@ -27,14 +27,18 @@ from .envelope import (
 )
 from .fallback_pipeline import FallbackPipeline
 from .openai_tts_pipeline import OpenAITTSPipeline
+from .piper_pipeline import PiperPipeline
 from .pipeline import MockPipeline, Pipeline
 from .stt_processor import SttProcessor
+from .voxtral_pipeline import VoxtralPipeline
 
 _PIPELINES: dict[str, type[Pipeline]] = {
     "mock": MockPipeline,
     "elevenlabs": ElevenLabsPipeline,
     "openai_tts": OpenAITTSPipeline,
     "cartesia": CartesiaPipeline,
+    "piper": PiperPipeline,
+    "voxtral": VoxtralPipeline,
     "fallback": FallbackPipeline,
 }
 

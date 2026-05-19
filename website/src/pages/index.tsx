@@ -77,12 +77,12 @@ function HeroSection() {
     <header className={styles.heroBanner}>
       <div className="container">
         <h1 className={styles.heroTitle}>
-          The Voice Layer for<br />AI Companions
+          Build AI Companions<br />You Actually Own
         </h1>
         <p className={styles.heroSubtitle}>
-          Kith is a runtime-agnostic voice framework that sits between your agent
-          and realtime voice infrastructure. Ship companions that sound natural,
-          handle barge-in, and drive avatars — without rebuilding the voice stack.
+          Open-source voice toolkit for AI companions. Natural speech, real laughter,
+          emotion-aware voice — running locally or in the cloud. No vendor lock-in.
+          Your companion, your data, your control.
         </p>
         <div className={styles.buttons}>
           <Link className={styles.primaryBtn} to="/docs/getting-started">
